@@ -1,0 +1,17 @@
+syntax ="proto3";
+
+option go_package = "./;pb";
+
+message OrderRequest{
+    string Id = 1;
+    string AccountId = 2;
+    
+}
+message Item {
+    string Id = 1;
+    float Price = 2;
+}
+
+message OrderResponse{
+    string OrderId = 1;
+}
