@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/phuthien0308/orderservice/handler"
-	"github.com/phuthien0308/orderservice/pb"
+	"github.com/phuthien0308/ordering/orderservice/handler"
+	"github.com/phuthien0308/ordering/orderservice/pb"
 	"google.golang.org/grpc"
 )
 

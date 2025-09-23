@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/phuthien0308/orderservice/pb"
+	"github.com/phuthien0308/ordering/orderservice/pb"
 )
 
 type Handler struct {

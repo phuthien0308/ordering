@@ -1,4 +1,4 @@
-module github.com/phuthien0308/orderservice
+module github.com/phuthien0308/ordering/orderservice
 
 go 1.24.2
 
