@@ -1,0 +1,2 @@
+The account service manages accounts, including adding, updating, and searching.  
+It is a simple service with redis and elastic search. While redis supports to capture data, elastic search is leveraged for searching.

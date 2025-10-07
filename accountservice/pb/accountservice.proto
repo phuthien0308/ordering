@@ -1,0 +1,25 @@
+syntax="proto3";
+
+option go_package = "./;pb";
+
+import "google/protobuf/empty.proto";
+
+
+service AccountService {
+    rpc CreateAccount(CreatedAccountRequest) returns (CreatedAccountResponse){}
+    rpc DeleteAccount(DeletedAccountRequest) returns (google.protobuf.Empty){}
+}
+
+message CreatedAccountRequest {    
+    string name = 1;
+    string address = 2;
+}
+
+message CreatedAccountResponse {    
+    string accountId = 1;
+}
+
+message DeletedAccountRequest {
+    string accountID = 1;
+}
+

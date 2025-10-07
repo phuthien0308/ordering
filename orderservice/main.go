@@ -16,5 +16,7 @@ func main() {
 	}
 	server := grpc.NewServer()
 	pb.RegisterOrderServiceServer(server, handler.NewHandler())
+	fmt.Println("Server is starting")
 	server.Serve(lis)
+
 }
