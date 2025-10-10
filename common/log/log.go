@@ -2,6 +2,7 @@ package log
 
 import (
 	"context"
+	"io"
 	"log/slog"
 	"os"
 	"runtime/debug"
@@ -13,7 +14,7 @@ const (
 	AppName      TagName = "app_name"
 	BuildVersion TagName = "build_version"
 	OsVersion    TagName = "os_version"
-	UserContext  TagName = "user_context"
+	UserAgent    TagName = "user_agent"
 	RequestId    TagName = "request_id"
 	RequestBody  TagName = "request_body"
 )
@@ -50,14 +51,14 @@ func NewTag(key string, value any) Tag {
 
 func UserContextTag(userContext string) Tag {
 	return Tag{
-		Key:   string(UserContext),
+		Key:   string(UserAgent),
 		Value: slog.StringValue(userContext),
 	}
 }
 
 func ErrorTag(err error) []Tag {
 	return []Tag{Tag{
-		Key:   string(UserContext),
+		Key:   "error",
 		Value: slog.AnyValue(err),
 	}, Tag{
 		Key:   "stack",
@@ -72,9 +73,14 @@ type Logger interface {
 	Error(ctx context.Context, msg string, err error, tags ...Tag)
 }
 
-func NewLogger(logLevel LogLevel, defaultTags ...Tag) Logger {
+func NewLogger(logLevel LogLevel, writer io.Writer, defaultTags ...Tag) Logger {
 
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: toSlogLevel(logLevel)}))
+	if writer == nil {
+		writer = os.Stdout
+	}
+
+	logger := slog.New(slog.NewJSONHandler(writer, &slog.HandlerOptions{Level: toSlogLevel(logLevel)}))
+
 	var attrs []any
 	for _, tag := range defaultTags {
 		attrs = append(attrs, slog.Attr{Key: string(tag.Key), Value: slog.AnyValue(tag.Value)})
@@ -124,4 +130,7 @@ func toSlogLevel(level LogLevel) slog.Level {
 	default:
 		return slog.LevelDebug
 	}
+}
+
+type zapLogImpl struct {
 }
