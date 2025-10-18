@@ -1,0 +1,21 @@
+version: '3.8'
+services:
+  zookeeper:
+    image: zookeeper:latest 
+    hostname: zookeeper
+    ports:
+      - "2181:2181"
+    expose:
+      - 2181    
+    environment:
+      ZOO_MY_ID: 1 # Required for a single-node setup      
+
+  zookeeper-ui:
+    image: elkozmon/zoonavigator:latest # Or qnib/docker-zkui:latest
+    ports:
+      - "9000:9000" # Adjust port as needed for the UI
+    environment:
+      CONNECTION_LOCALZK_NAME: localzookeeper
+      CONNECTION_LOCALZK_CONN: zookeeper:2181
+    depends_on:
+      - zookeeper

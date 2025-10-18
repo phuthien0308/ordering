@@ -6,7 +6,12 @@ The ordering sytem allows users to to some tasks such as
 - Cancel scheduled orders
 - Send orders to another account
 
-##Technical debts: 
+###Technical debts: 
 [] Service to service authentication: Use TSL for mutual authentication
 [] DNS reslover: How does the service mesh help?
 [] Deployment
+
+## Order service  
+This service handles customers' orders.  
+- Placing orders 
+- Update orders( add new items, remove items, adjust the quantity of an item)
