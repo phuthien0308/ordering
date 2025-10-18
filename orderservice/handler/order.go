@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -15,7 +14,6 @@ var AddOrderHandler = func(ctx *gin.Context) {
 		//config.Logger.Error(ctx, "can not bind json", err)
 		ctx.AbortWithError(http.StatusBadRequest, err)
 	}
-	fmt.Println(body)
 	if err := repository.Order.AddRange(ctx, body); err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 	}
