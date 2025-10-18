@@ -1,14 +1,14 @@
-module github.com/phuthien0308/config
+module github.com/phuthien0308/ordering/config
 
 go 1.24.2
 
 require (
+	github.com/go-zookeeper/zk v1.0.4
 	google.golang.org/grpc v1.76.0
 	google.golang.org/protobuf v1.36.10
 )
 
 require (
-	github.com/go-zookeeper/zk v1.0.4 // indirect
 	golang.org/x/net v0.42.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect
 	golang.org/x/text v0.27.0 // indirect

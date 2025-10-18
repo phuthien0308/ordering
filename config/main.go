@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/go-zookeeper/zk"
-	"github.com/phuthien0308/config/pb"
+	"github.com/phuthien0308/ordering/config/pb"
 	"google.golang.org/grpc"
 )
 
