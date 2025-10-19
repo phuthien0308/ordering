@@ -1,7 +1,6 @@
 package config
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"os"
@@ -9,7 +8,10 @@ import (
 	"github.com/phuthien0308/ordering/common/log"
 	"github.com/phuthien0308/ordering/config/pb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
+
+var configServer = "localhost:8080"
 
 var Config = struct {
 	Logger log.Logger
@@ -18,6 +20,7 @@ var Config = struct {
 }{
 	Logger: log.NewLogger(log.DEBUG, nil),
 	Env:    os.Getenv("env"),
+	Db:     &MongoDBConfig{},
 }
 
 type MongoDBConfig struct {
@@ -26,29 +29,39 @@ type MongoDBConfig struct {
 	Hosts    []string `json:"hosts"`
 }
 
-func Init() {
-	db, err := loadMongoDBConfig()
+func init() {
+	register()
+	loadConfig("/orderservice/db", Config.Db)
+}
+
+func register() {
+	// grpcClient, err := grpc.NewClient(configServer, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// configClient := pb.NewConfigClient(grpcClient)
+
+}
+func loadConfig(path string, v any) {
+
+	grpcClient, err := grpc.NewClient(configServer, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		panic(err)
 	}
-	Config.Db = db
-}
-
-func loadMongoDBConfig() (*MongoDBConfig, error) {
-	grpcClient, err := grpc.NewClient("localhost:8080")
-	if err != nil {
-		return nil, err
-	}
 	configClient := pb.NewConfigClient(grpcClient)
-	dbConfig, err := configClient.Get(context.Background(), &pb.ConfigRequest{Path: "/orderservice/db"})
+
+	response, err := configClient.Watch(context.Background(), &pb.ConfigRequest{Path: path})
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	decoder := json.NewDecoder(bytes.NewBufferString(dbConfig.Data))
-	var result *MongoDBConfig
-	err = decoder.Decode(&result)
-	if err != nil {
-		return nil, err
+	for {
+		data, err := response.Recv()
+		if err != nil {
+			panic(err)
+		}
+		err = json.Unmarshal([]byte(data.Data), v)
+		if err != nil {
+			panic(err)
+		}
 	}
-	return result, nil
 }

@@ -3,7 +3,9 @@ option go_package ="./;pb";
 
 
 
-service config {
+service config {    
+    rpc Register(RegisterRequest) returns (RegisterResponse){}
+    rpc Deregister(DeregisterRequest) returns(DeregisterResponse){}
     rpc Get(ConfigRequest)returns (ConfigResponse){}
     rpc Watch(ConfigRequest) returns (stream ConfigResponse){}
 }
@@ -14,4 +16,22 @@ message ConfigRequest {
 
 message ConfigResponse {
     string data = 1;
+}
+
+message RegisterRequest {
+    string appname = 1;
+    string ip = 2;
+}
+
+message RegisterResponse {
+
+}
+
+message DeregisterRequest {
+    string appname = 1;
+    string ip = 2;
+}
+
+message DeregisterResponse {
+
 }

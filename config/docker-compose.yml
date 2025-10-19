@@ -19,3 +19,12 @@ services:
       CONNECTION_LOCALZK_CONN: zookeeper:2181
     depends_on:
       - zookeeper
+  app:
+    image: config:v0.1
+    ports:
+      - "50052:50052"
+      - "8081:8081"    
+    environment:
+      hosts: "zookeeper:2181"
+    depends_on:
+      - zookeeper

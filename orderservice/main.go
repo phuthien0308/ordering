@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+	. "github.com/phuthien0308/ordering/orderservice/config"
 	"github.com/phuthien0308/ordering/orderservice/handler"
 )
 
@@ -46,6 +47,6 @@ func main() {
 
 	r.POST("/orders", handler.AddOrderHandler)
 
-	r.Run()
+	r.Run("localhost:8081")
 
 }

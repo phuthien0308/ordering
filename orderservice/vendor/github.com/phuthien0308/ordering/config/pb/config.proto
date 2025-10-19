@@ -1,0 +1,17 @@
+syntax="proto3";
+option go_package ="./;pb";
+
+
+
+service config {
+    rpc Get(ConfigRequest)returns (ConfigResponse){}
+    rpc Watch(ConfigRequest) returns (stream ConfigResponse){}
+}
+
+message ConfigRequest {
+    string path = 1;
+}
+
+message ConfigResponse {
+    string data = 1;
+}

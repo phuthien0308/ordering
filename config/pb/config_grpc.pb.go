@@ -19,14 +19,18 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Config_Get_FullMethodName   = "/config/Get"
-	Config_Watch_FullMethodName = "/config/Watch"
+	Config_Register_FullMethodName   = "/config/Register"
+	Config_Deregister_FullMethodName = "/config/Deregister"
+	Config_Get_FullMethodName        = "/config/Get"
+	Config_Watch_FullMethodName      = "/config/Watch"
 )
 
 // ConfigClient is the client API for Config service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ConfigClient interface {
+	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
+	Deregister(ctx context.Context, in *DeregisterRequest, opts ...grpc.CallOption) (*DeregisterResponse, error)
 	Get(ctx context.Context, in *ConfigRequest, opts ...grpc.CallOption) (*ConfigResponse, error)
 	Watch(ctx context.Context, in *ConfigRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ConfigResponse], error)
 }
@@ -37,6 +41,26 @@ type configClient struct {
 
 func NewConfigClient(cc grpc.ClientConnInterface) ConfigClient {
 	return &configClient{cc}
+}
+
+func (c *configClient) Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RegisterResponse)
+	err := c.cc.Invoke(ctx, Config_Register_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *configClient) Deregister(ctx context.Context, in *DeregisterRequest, opts ...grpc.CallOption) (*DeregisterResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeregisterResponse)
+	err := c.cc.Invoke(ctx, Config_Deregister_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *configClient) Get(ctx context.Context, in *ConfigRequest, opts ...grpc.CallOption) (*ConfigResponse, error) {
@@ -72,6 +96,8 @@ type Config_WatchClient = grpc.ServerStreamingClient[ConfigResponse]
 // All implementations must embed UnimplementedConfigServer
 // for forward compatibility.
 type ConfigServer interface {
+	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
+	Deregister(context.Context, *DeregisterRequest) (*DeregisterResponse, error)
 	Get(context.Context, *ConfigRequest) (*ConfigResponse, error)
 	Watch(*ConfigRequest, grpc.ServerStreamingServer[ConfigResponse]) error
 	mustEmbedUnimplementedConfigServer()
@@ -84,6 +110,12 @@ type ConfigServer interface {
 // pointer dereference when methods are called.
 type UnimplementedConfigServer struct{}
 
+func (UnimplementedConfigServer) Register(context.Context, *RegisterRequest) (*RegisterResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
+}
+func (UnimplementedConfigServer) Deregister(context.Context, *DeregisterRequest) (*DeregisterResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Deregister not implemented")
+}
 func (UnimplementedConfigServer) Get(context.Context, *ConfigRequest) (*ConfigResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
 }
@@ -109,6 +141,42 @@ func RegisterConfigServer(s grpc.ServiceRegistrar, srv ConfigServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&Config_ServiceDesc, srv)
+}
+
+func _Config_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConfigServer).Register(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Config_Register_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConfigServer).Register(ctx, req.(*RegisterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Config_Deregister_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeregisterRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConfigServer).Deregister(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Config_Deregister_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConfigServer).Deregister(ctx, req.(*DeregisterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Config_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -147,6 +215,14 @@ var Config_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "config",
 	HandlerType: (*ConfigServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Register",
+			Handler:    _Config_Register_Handler,
+		},
+		{
+			MethodName: "Deregister",
+			Handler:    _Config_Deregister_Handler,
+		},
 		{
 			MethodName: "Get",
 			Handler:    _Config_Get_Handler,

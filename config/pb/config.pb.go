@@ -109,6 +109,182 @@ func (x *ConfigResponse) GetData() string {
 	return ""
 }
 
+type RegisterRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Appname       string                 `protobuf:"bytes,1,opt,name=appname,proto3" json:"appname,omitempty"`
+	Ip            string                 `protobuf:"bytes,2,opt,name=ip,proto3" json:"ip,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RegisterRequest) Reset() {
+	*x = RegisterRequest{}
+	mi := &file_config_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegisterRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterRequest) ProtoMessage() {}
+
+func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_config_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterRequest.ProtoReflect.Descriptor instead.
+func (*RegisterRequest) Descriptor() ([]byte, []int) {
+	return file_config_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *RegisterRequest) GetAppname() string {
+	if x != nil {
+		return x.Appname
+	}
+	return ""
+}
+
+func (x *RegisterRequest) GetIp() string {
+	if x != nil {
+		return x.Ip
+	}
+	return ""
+}
+
+type RegisterResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RegisterResponse) Reset() {
+	*x = RegisterResponse{}
+	mi := &file_config_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegisterResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterResponse) ProtoMessage() {}
+
+func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_config_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterResponse.ProtoReflect.Descriptor instead.
+func (*RegisterResponse) Descriptor() ([]byte, []int) {
+	return file_config_proto_rawDescGZIP(), []int{3}
+}
+
+type DeregisterRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Appname       string                 `protobuf:"bytes,1,opt,name=appname,proto3" json:"appname,omitempty"`
+	Ip            string                 `protobuf:"bytes,2,opt,name=ip,proto3" json:"ip,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeregisterRequest) Reset() {
+	*x = DeregisterRequest{}
+	mi := &file_config_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeregisterRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeregisterRequest) ProtoMessage() {}
+
+func (x *DeregisterRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_config_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeregisterRequest.ProtoReflect.Descriptor instead.
+func (*DeregisterRequest) Descriptor() ([]byte, []int) {
+	return file_config_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *DeregisterRequest) GetAppname() string {
+	if x != nil {
+		return x.Appname
+	}
+	return ""
+}
+
+func (x *DeregisterRequest) GetIp() string {
+	if x != nil {
+		return x.Ip
+	}
+	return ""
+}
+
+type DeregisterResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeregisterResponse) Reset() {
+	*x = DeregisterResponse{}
+	mi := &file_config_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeregisterResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeregisterResponse) ProtoMessage() {}
+
+func (x *DeregisterResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_config_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeregisterResponse.ProtoReflect.Descriptor instead.
+func (*DeregisterResponse) Descriptor() ([]byte, []int) {
+	return file_config_proto_rawDescGZIP(), []int{5}
+}
+
 var File_config_proto protoreflect.FileDescriptor
 
 const file_config_proto_rawDesc = "" +
@@ -117,8 +293,19 @@ const file_config_proto_rawDesc = "" +
 	"\rConfigRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"$\n" +
 	"\x0eConfigResponse\x12\x12\n" +
-	"\x04data\x18\x01 \x01(\tR\x04data2`\n" +
-	"\x06config\x12(\n" +
+	"\x04data\x18\x01 \x01(\tR\x04data\";\n" +
+	"\x0fRegisterRequest\x12\x18\n" +
+	"\aappname\x18\x01 \x01(\tR\aappname\x12\x0e\n" +
+	"\x02ip\x18\x02 \x01(\tR\x02ip\"\x12\n" +
+	"\x10RegisterResponse\"=\n" +
+	"\x11DeregisterRequest\x12\x18\n" +
+	"\aappname\x18\x01 \x01(\tR\aappname\x12\x0e\n" +
+	"\x02ip\x18\x02 \x01(\tR\x02ip\"\x14\n" +
+	"\x12DeregisterResponse2\xcc\x01\n" +
+	"\x06config\x121\n" +
+	"\bRegister\x12\x10.RegisterRequest\x1a\x11.RegisterResponse\"\x00\x127\n" +
+	"\n" +
+	"Deregister\x12\x12.DeregisterRequest\x1a\x13.DeregisterResponse\"\x00\x12(\n" +
 	"\x03Get\x12\x0e.ConfigRequest\x1a\x0f.ConfigResponse\"\x00\x12,\n" +
 	"\x05Watch\x12\x0e.ConfigRequest\x1a\x0f.ConfigResponse\"\x000\x01B\aZ\x05./;pbb\x06proto3"
 
@@ -134,18 +321,26 @@ func file_config_proto_rawDescGZIP() []byte {
 	return file_config_proto_rawDescData
 }
 
-var file_config_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_config_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_config_proto_goTypes = []any{
-	(*ConfigRequest)(nil),  // 0: ConfigRequest
-	(*ConfigResponse)(nil), // 1: ConfigResponse
+	(*ConfigRequest)(nil),      // 0: ConfigRequest
+	(*ConfigResponse)(nil),     // 1: ConfigResponse
+	(*RegisterRequest)(nil),    // 2: RegisterRequest
+	(*RegisterResponse)(nil),   // 3: RegisterResponse
+	(*DeregisterRequest)(nil),  // 4: DeregisterRequest
+	(*DeregisterResponse)(nil), // 5: DeregisterResponse
 }
 var file_config_proto_depIdxs = []int32{
-	0, // 0: config.Get:input_type -> ConfigRequest
-	0, // 1: config.Watch:input_type -> ConfigRequest
-	1, // 2: config.Get:output_type -> ConfigResponse
-	1, // 3: config.Watch:output_type -> ConfigResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
+	2, // 0: config.Register:input_type -> RegisterRequest
+	4, // 1: config.Deregister:input_type -> DeregisterRequest
+	0, // 2: config.Get:input_type -> ConfigRequest
+	0, // 3: config.Watch:input_type -> ConfigRequest
+	3, // 4: config.Register:output_type -> RegisterResponse
+	5, // 5: config.Deregister:output_type -> DeregisterResponse
+	1, // 6: config.Get:output_type -> ConfigResponse
+	1, // 7: config.Watch:output_type -> ConfigResponse
+	4, // [4:8] is the sub-list for method output_type
+	0, // [0:4] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -162,7 +357,7 @@ func file_config_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_config_proto_rawDesc), len(file_config_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
