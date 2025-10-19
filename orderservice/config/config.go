@@ -7,11 +7,9 @@ import (
 
 	"github.com/phuthien0308/ordering/common/log"
 	"github.com/phuthien0308/ordering/config/pb"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"github.com/phuthien0308/ordering/orderservice/clients"
+	"github.com/phuthien0308/ordering/orderservice/helper"
 )
-
-var configServer = "localhost:8080"
 
 var Config = struct {
 	Logger log.Logger
@@ -31,26 +29,24 @@ type MongoDBConfig struct {
 
 func init() {
 	register()
-	loadConfig("/orderservice/db", Config.Db)
+	go func() { loadConfig("/orderservice/db", Config.Db) }()
 }
 
 func register() {
-	// grpcClient, err := grpc.NewClient(configServer, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// configClient := pb.NewConfigClient(grpcClient)
-
+	ip := "localhost:8081"
+	podIP := os.Getenv("POD_IP")
+	if len(podIP) > 0 {
+		ip = podIP
+	}
+	clients.ConfigClient.Register(context.Background(), &pb.RegisterRequest{
+		Appname: helper.AppName,
+		Ip:      ip,
+	})
 }
+
 func loadConfig(path string, v any) {
 
-	grpcClient, err := grpc.NewClient(configServer, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		panic(err)
-	}
-	configClient := pb.NewConfigClient(grpcClient)
-
-	response, err := configClient.Watch(context.Background(), &pb.ConfigRequest{Path: path})
+	response, err := clients.ConfigClient.Watch(context.Background(), &pb.ConfigRequest{Path: path})
 	if err != nil {
 		panic(err)
 	}

@@ -4,8 +4,8 @@ go 1.24.2
 
 require (
 	github.com/gin-gonic/gin v1.11.0
-	github.com/phuthien0308/ordering/common v0.0.0-20251018000231-a5b1c46fc832
-	github.com/phuthien0308/ordering/config v0.0.0-20251018010357-c26b1b0db202
+	github.com/phuthien0308/ordering/common v0.0.0-20251018010357-c26b1b0db202
+	github.com/phuthien0308/ordering/config v0.0.0-20251019184753-dd1f92da852f
 	go.mongodb.org/mongo-driver/v2 v2.3.1
 	google.golang.org/grpc v1.76.0
 	google.golang.org/protobuf v1.36.10
