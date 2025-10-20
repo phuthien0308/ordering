@@ -80,8 +80,6 @@ github.com/go-playground/universal-translator
 # github.com/go-playground/validator/v10 v10.28.0
 ## explicit; go 1.24.0
 github.com/go-playground/validator/v10
-# github.com/go-zookeeper/zk v1.0.4
-## explicit; go 1.13
 # github.com/goccy/go-json v0.10.5
 ## explicit; go 1.19
 github.com/goccy/go-json
@@ -143,10 +141,10 @@ github.com/pelletier/go-toml/v2/internal/characters
 github.com/pelletier/go-toml/v2/internal/danger
 github.com/pelletier/go-toml/v2/internal/tracker
 github.com/pelletier/go-toml/v2/unstable
-# github.com/phuthien0308/ordering/common v0.0.0-20251018010357-c26b1b0db202
+# github.com/phuthien0308/ordering/common v0.0.0-20251020004658-ebf48c0a7ea5
 ## explicit; go 1.24.2
 github.com/phuthien0308/ordering/common/log
-# github.com/phuthien0308/ordering/config v0.0.0-20251019184753-dd1f92da852f
+# github.com/phuthien0308/ordering/config v0.0.0-20251020004658-ebf48c0a7ea5
 ## explicit; go 1.24.2
 github.com/phuthien0308/ordering/config/pb
 # github.com/quic-go/qpack v0.5.1
@@ -169,8 +167,6 @@ github.com/quic-go/quic-go/internal/utils/ringbuffer
 github.com/quic-go/quic-go/internal/wire
 github.com/quic-go/quic-go/logging
 github.com/quic-go/quic-go/quicvarint
-# github.com/samber/lo v1.52.0
-## explicit; go 1.18
 # github.com/twitchyliquid64/golang-asm v0.15.1
 ## explicit; go 1.13
 github.com/twitchyliquid64/golang-asm/asm/arch
