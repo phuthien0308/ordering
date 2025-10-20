@@ -68,7 +68,7 @@ func main() {
 	<-termChan
 
 	ip := "localhost:8081"
-	podID := os.Getenv("POD_IP")
+	podID := helper.POD_ID
 	if len(podID) > 0 {
 		ip = podID
 	}

@@ -34,7 +34,7 @@ func init() {
 
 func register() {
 	ip := "localhost:8081"
-	podIP := os.Getenv("POD_IP")
+	podIP := helper.POD_ID
 	if len(podIP) > 0 {
 		ip = podIP
 	}
