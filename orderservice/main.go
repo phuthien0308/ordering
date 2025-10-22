@@ -60,7 +60,7 @@ func main() {
 
 	go func() {
 		fmt.Println("starting the service")
-		r.Run("localhost:8081")
+		r.Run(":8081")
 	}()
 
 	termChan := make(chan os.Signal, 1)

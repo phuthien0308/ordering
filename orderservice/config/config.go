@@ -29,7 +29,7 @@ type MongoDBConfig struct {
 
 func init() {
 	register()
-	go func() { loadConfig("/orderservice/db", Config.Db) }()
+	//go func() { loadConfig("/orderservice/db", Config.Db) }()
 }
 
 func register() {
@@ -38,10 +38,13 @@ func register() {
 	if len(podIP) > 0 {
 		ip = podIP
 	}
-	clients.ConfigClient.Register(context.Background(), &pb.RegisterRequest{
+	_, err := clients.ConfigClient.Register(context.Background(), &pb.RegisterRequest{
 		Appname: helper.AppName,
 		Ip:      ip,
 	})
+	if err != nil {
+		panic(err)
+	}
 }
 
 func loadConfig(path string, v any) {

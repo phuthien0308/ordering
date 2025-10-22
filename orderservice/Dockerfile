@@ -1,9 +1,9 @@
-FROM golang:1.24-alpine as builder
+FROM golang:1.24-alpine AS builder
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . . 
-RUN go build -v -x -o orderservice . 
+RUN go build -v -o orderservice . 
 
 FROM alpine:latest
 WORKDIR /app 

@@ -2,6 +2,7 @@ package log
 
 import (
 	"bytes"
+
 	"strings"
 	"testing"
 )
@@ -43,7 +44,7 @@ func TestLog(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(t.Name(), func(t *testing.T) {
 			writer := bytes.NewBuffer([]byte{})
-			logger := NewLogger(tc.level, writer)
+			logger := NewDefaultLogger(WithOutputSource(writer))
 			if tc.level == DEBUG {
 				logger.Debug(t.Context(), tc.inputStr)
 			}

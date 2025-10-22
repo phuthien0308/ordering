@@ -36,7 +36,7 @@ func NewRateLimiterRedis(command string, window time.Duration, volumne int64) *r
 		command:     command,
 		timeWindow:  window,
 		volumne:     volumne,
-		logger:      log.NewLogger(log.INFO, nil),
+		logger:      log.NewDefaultLogger(),
 		redisClient: *redisC,
 	}
 }

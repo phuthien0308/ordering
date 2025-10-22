@@ -39,12 +39,17 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}          
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:                             
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
           {{- range $name, $val := .Values.env }}
-          env:                                
-          - name: {{ $val.name | quote}}
-            value: {{ $val.value | quote}} 
-          {{ end -}}
+            - name: {{ $val.name | quote}}
+              value: {{ $val.value | quote}} 
+          {{ end -}}            
+            
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}

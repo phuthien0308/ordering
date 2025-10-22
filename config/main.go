@@ -104,6 +104,7 @@ func (cf *configImpl) Register(ctx context.Context, rq *pb.RegisterRequest) (*pb
 	if err != nil {
 		return nil, err
 	}
+
 	if !existed {
 		newIP, _ := json.Marshal([]string{rq.Ip})
 		_, err := cf.conn.Create(path, newIP, zk.FlagPersistent, zk.WorldACL(zk.PermAll))

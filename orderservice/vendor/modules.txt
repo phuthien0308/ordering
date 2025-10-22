@@ -141,10 +141,10 @@ github.com/pelletier/go-toml/v2/internal/characters
 github.com/pelletier/go-toml/v2/internal/danger
 github.com/pelletier/go-toml/v2/internal/tracker
 github.com/pelletier/go-toml/v2/unstable
-# github.com/phuthien0308/ordering/common v0.0.0-20251020004658-ebf48c0a7ea5
+# github.com/phuthien0308/ordering/common v0.0.0-20251020012013-18e31a7cd798
 ## explicit; go 1.24.2
 github.com/phuthien0308/ordering/common/log
-# github.com/phuthien0308/ordering/config v0.0.0-20251020004658-ebf48c0a7ea5
+# github.com/phuthien0308/ordering/config v0.0.0-20251020012013-18e31a7cd798
 ## explicit; go 1.24.2
 github.com/phuthien0308/ordering/config/pb
 # github.com/quic-go/qpack v0.5.1
@@ -319,7 +319,7 @@ golang.org/x/tools/internal/gopathwalk
 golang.org/x/tools/internal/imports
 golang.org/x/tools/internal/modindex
 golang.org/x/tools/internal/stdlib
-# google.golang.org/genproto/googleapis/rpc v0.0.0-20251014184007-4626949a642f
+# google.golang.org/genproto/googleapis/rpc v0.0.0-20251020155222-88f65dc88635
 ## explicit; go 1.24.0
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.76.0
