@@ -51,7 +51,8 @@ func main() {
 	// 	w.Write([]byte("hello world"))
 	// })
 	// http.ListenAndServe(":8090", nil)
-	register()
+	appNode := register()
+	fmt.Println("appNode", appNode)
 	r := gin.Default()
 	r.POST("/orders", handler.AddOrderHandler)
 	r.GET("/healthz", func(ctx *gin.Context) {
@@ -69,16 +70,17 @@ func main() {
 
 	clients.ConfigClient.Deregister(context.Background(), &pb.DeregisterRequest{
 		Appname: helper.AppName,
-		Ip:      helper.HealthCheckEndpoint(8081),
+		Ip:      appNode,
 	})
 }
 
-func register() {
-	_, err := clients.ConfigClient.Register(context.Background(), &pb.RegisterRequest{
+func register() string {
+	response, err := clients.ConfigClient.Register(context.Background(), &pb.RegisterRequest{
 		Appname: helper.AppName,
 		Ip:      helper.HealthCheckEndpoint(8081),
 	})
 	if err != nil {
 		panic(err)
 	}
+	return response.AppNode
 }

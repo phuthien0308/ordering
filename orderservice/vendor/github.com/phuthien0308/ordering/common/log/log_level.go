@@ -4,7 +4,7 @@ package log
 type LogLevel uint
 
 const (
-	DEBUG LogLevel = iota + 1
+	DEBUG LogLevel = iota
 	INFO
 	WARM
 	ERROR

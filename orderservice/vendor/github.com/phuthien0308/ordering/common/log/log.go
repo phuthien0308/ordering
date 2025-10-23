@@ -5,84 +5,55 @@ import (
 	"io"
 	"log/slog"
 	"os"
-	"runtime/debug"
+
+	"github.com/phuthien0308/ordering/common/log/tags"
 )
-
-type TagName string
-
-const (
-	AppName      TagName = "app_name"
-	BuildVersion TagName = "build_version"
-	OsVersion    TagName = "os_version"
-	UserAgent    TagName = "user_agent"
-	RequestId    TagName = "request_id"
-	RequestBody  TagName = "request_body"
-)
-
-type Tag struct {
-	Key   string
-	Value any
-}
-
-func AppNameTag(vl string) Tag {
-	return Tag{
-		Key:   string(AppName),
-		Value: slog.StringValue(vl),
-	}
-}
-func AppBuildversionTag(version string) Tag {
-	return Tag{
-		Key:   string(BuildVersion),
-		Value: slog.StringValue(version),
-	}
-}
-func OsVersionTag(osVersion string) Tag {
-	return Tag{
-		Key:   string(OsVersion),
-		Value: slog.StringValue(osVersion),
-	}
-}
-func NewTag(key string, value any) Tag {
-	return Tag{
-		Key:   key,
-		Value: value,
-	}
-}
-
-func UserContextTag(userContext string) Tag {
-	return Tag{
-		Key:   string(UserAgent),
-		Value: slog.StringValue(userContext),
-	}
-}
-
-func ErrorTag(err error) []Tag {
-	return []Tag{Tag{
-		Key:   "error",
-		Value: slog.AnyValue(err),
-	}, Tag{
-		Key:   "stack",
-		Value: slog.StringValue(string(debug.Stack())),
-	}}
-}
 
 type Logger interface {
-	Debug(ctx context.Context, msg string, tags ...Tag)
-	Info(ctx context.Context, msg string, tags ...Tag)
-	Warn(ctx context.Context, msg string, tags ...Tag)
-	Error(ctx context.Context, msg string, err error, tags ...Tag)
+	Debug(ctx context.Context, msg string, tags ...tags.Tag)
+	Info(ctx context.Context, msg string, tags ...tags.Tag)
+	Warn(ctx context.Context, msg string, tags ...tags.Tag)
+	Error(ctx context.Context, msg string, err error, tags ...tags.Tag)
 }
 
-func NewLogger(logLevel LogLevel, writer io.Writer, defaultTags ...Tag) Logger {
+type defaultLoggerSetup struct {
+	level       LogLevel
+	writer      io.Writer
+	defaultTags []tags.Tag
+}
+type LogOptions func(*defaultLoggerSetup)
 
-	if writer == nil {
-		writer = os.Stdout
+func WithLogLevel(loglevel LogLevel) LogOptions {
+	return func(dls *defaultLoggerSetup) {
+		dls.level = loglevel
+	}
+}
+
+func WithOutputSource(writer io.Writer) LogOptions {
+	return func(dls *defaultLoggerSetup) {
+		dls.writer = writer
+	}
+}
+
+func WithDefaultTags(tags []tags.Tag) LogOptions {
+	return func(dls *defaultLoggerSetup) {
+		dls.defaultTags = tags
+	}
+}
+
+func NewDefaultLogger(opts ...LogOptions) Logger {
+	optionsImp := &defaultLoggerSetup{
+		level:  DEBUG,
+		writer: os.Stdout,
+	}
+	for _, opt := range opts {
+		opt(optionsImp)
 	}
 
-	logger := slog.New(slog.NewJSONHandler(writer, &slog.HandlerOptions{Level: toSlogLevel(logLevel)}))
+	logger := slog.New(slog.NewJSONHandler(optionsImp.writer, &slog.HandlerOptions{Level: toSlogLevel(optionsImp.level)}))
 
 	var attrs []any
-	for _, tag := range defaultTags {
+	for _, tag := range optionsImp.defaultTags {
 		attrs = append(attrs, slog.Attr{Key: string(tag.Key), Value: slog.AnyValue(tag.Value)})
 	}
 	logger = logger.With(attrs...)
@@ -95,21 +66,21 @@ type slogImpl struct {
 	log *slog.Logger
 }
 
-func (s *slogImpl) Debug(ctx context.Context, msg string, tags ...Tag) {
+func (s *slogImpl) Debug(ctx context.Context, msg string, tags ...tags.Tag) {
 	s.write(ctx, slog.LevelDebug, msg, tags...)
 }
-func (s *slogImpl) Info(ctx context.Context, msg string, tags ...Tag) {
+func (s *slogImpl) Info(ctx context.Context, msg string, tags ...tags.Tag) {
 	s.write(ctx, slog.LevelInfo, msg, tags...)
 }
-func (s *slogImpl) Warn(ctx context.Context, msg string, tags ...Tag) {
+func (s *slogImpl) Warn(ctx context.Context, msg string, tags ...tags.Tag) {
 	s.write(ctx, slog.LevelWarn, msg, tags...)
 }
-func (s *slogImpl) Error(ctx context.Context, msg string, err error, tags ...Tag) {
-	tags = append(tags, ErrorTag(err)...)
-	s.write(ctx, slog.LevelError, msg, tags...)
+func (s *slogImpl) Error(ctx context.Context, msg string, err error, t ...tags.Tag) {
+	t = append(t, tags.ErrorTag(err)...)
+	s.write(ctx, slog.LevelError, msg, t...)
 }
 
-func (s *slogImpl) write(ctx context.Context, level slog.Level, msg string, tags ...Tag) {
+func (s *slogImpl) write(ctx context.Context, level slog.Level, msg string, tags ...tags.Tag) {
 	var attrs []any
 	for _, tag := range tags {
 		attrs = append(attrs, slog.Attr{Key: string(tag.Key), Value: slog.AnyValue(tag.Value)})
@@ -130,7 +101,4 @@ func toSlogLevel(level LogLevel) slog.Level {
 	default:
 		return slog.LevelDebug
 	}
-}
-
-type zapLogImpl struct {
 }

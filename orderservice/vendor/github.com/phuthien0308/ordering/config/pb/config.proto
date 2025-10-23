@@ -24,7 +24,7 @@ message RegisterRequest {
 }
 
 message RegisterResponse {
-
+    string appNode = 1;
 }
 
 message DeregisterRequest {

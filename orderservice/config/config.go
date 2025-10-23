@@ -5,20 +5,18 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/phuthien0308/ordering/common/log"
 	"github.com/phuthien0308/ordering/config/pb"
 	"github.com/phuthien0308/ordering/orderservice/clients"
 	"github.com/phuthien0308/ordering/orderservice/helper"
 )
 
 var Config = struct {
-	Logger log.Logger
-	Env    string
-	Db     *MongoDBConfig
+	Env string
+	Db  *MongoDBConfig
 }{
-	Logger: log.NewLogger(log.DEBUG, nil),
-	Env:    os.Getenv("env"),
-	Db:     &MongoDBConfig{},
+
+	Env: os.Getenv("env"),
+	Db:  &MongoDBConfig{},
 }
 
 type MongoDBConfig struct {

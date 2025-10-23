@@ -163,6 +163,7 @@ func (x *RegisterRequest) GetIp() string {
 
 type RegisterResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	AppNode       string                 `protobuf:"bytes,1,opt,name=appNode,proto3" json:"appNode,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -195,6 +196,13 @@ func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
 // Deprecated: Use RegisterResponse.ProtoReflect.Descriptor instead.
 func (*RegisterResponse) Descriptor() ([]byte, []int) {
 	return file_config_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *RegisterResponse) GetAppNode() string {
+	if x != nil {
+		return x.AppNode
+	}
+	return ""
 }
 
 type DeregisterRequest struct {
@@ -296,8 +304,9 @@ const file_config_proto_rawDesc = "" +
 	"\x04data\x18\x01 \x01(\tR\x04data\";\n" +
 	"\x0fRegisterRequest\x12\x18\n" +
 	"\aappname\x18\x01 \x01(\tR\aappname\x12\x0e\n" +
-	"\x02ip\x18\x02 \x01(\tR\x02ip\"\x12\n" +
-	"\x10RegisterResponse\"=\n" +
+	"\x02ip\x18\x02 \x01(\tR\x02ip\",\n" +
+	"\x10RegisterResponse\x12\x18\n" +
+	"\aappNode\x18\x01 \x01(\tR\aappNode\"=\n" +
 	"\x11DeregisterRequest\x12\x18\n" +
 	"\aappname\x18\x01 \x01(\tR\aappname\x12\x0e\n" +
 	"\x02ip\x18\x02 \x01(\tR\x02ip\"\x14\n" +

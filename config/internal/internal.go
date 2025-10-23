@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"errors"
@@ -49,7 +50,7 @@ func (cf *Config) Register(ctx context.Context, appName string, ip string) (stri
 			cf.Logger.Error("can not register", zap.Error(err), zap.String("ip", ip))
 			return "", err
 		}
-		return string(appNode), nil
+		return strconv.Itoa(int(appNode)), nil
 	}
 
 	return "", errors.New("can not register")
