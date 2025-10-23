@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"errors"
+
 	"github.com/go-zookeeper/zk"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/internal/errors"
 )
 
 type Config struct {
@@ -50,7 +51,8 @@ func (cf *Config) Register(ctx context.Context, appName string, ip string) (stri
 		}
 		return string(appNode), nil
 	}
-	return "", errors.Error("can not register")
+
+	return "", errors.New("can not register")
 }
 
 func (cf *Config) Deregister(ctx context.Context, appName string, ip string) error {
