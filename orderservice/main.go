@@ -67,13 +67,8 @@ func main() {
 	signal.Notify(termChan, syscall.SIGINT, syscall.SIGTERM)
 	<-termChan
 
-	ip := "localhost:8081"
-	podID := helper.POD_ID
-	if len(podID) > 0 {
-		ip = podID
-	}
 	clients.ConfigClient.Deregister(context.Background(), &pb.DeregisterRequest{
 		Appname: helper.AppName,
-		Ip:      ip,
+		Ip:      helper.HealthCheckEndpoint,
 	})
 }

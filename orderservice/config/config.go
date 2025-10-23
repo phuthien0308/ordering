@@ -33,14 +33,9 @@ func init() {
 }
 
 func register() {
-	ip := "localhost:8081"
-	podIP := helper.POD_ID
-	if len(podIP) > 0 {
-		ip = podIP
-	}
 	_, err := clients.ConfigClient.Register(context.Background(), &pb.RegisterRequest{
 		Appname: helper.AppName,
-		Ip:      ip,
+		Ip:      helper.HealthCheckEndpoint,
 	})
 	if err != nil {
 		panic(err)
