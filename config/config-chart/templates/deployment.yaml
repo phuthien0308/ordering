@@ -40,8 +40,8 @@ spec:
           {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag}}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}                    
-          {{- range $name, $val := .Values.env }}
-          env:                                
+          env:
+          {{- range $name, $val := .Values.env }}                                          
           - name: {{ $val.name | quote}}
             value: {{ $val.value | quote}} 
           {{ end -}}          

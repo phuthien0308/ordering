@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -66,8 +67,20 @@ func main() {
 			panic(err)
 		}
 	}()
+	interval := 5 * time.Second
+	retry := 1 * time.Second
 
-	worker := worker.NewHealhCheckWorker(zapLogger, conn, 5*time.Second)
+	if envRetry := os.Getenv("retryInSecond"); envRetry != "" {
+		newRetry, _ := strconv.Atoi(envRetry)
+		retry = time.Duration(newRetry) * time.Second
+	}
+
+	if envHealthCheck := os.Getenv("healthCheckInSecond"); envHealthCheck != "" {
+		newHealthCheck, _ := strconv.Atoi(envHealthCheck)
+		interval = time.Duration(newHealthCheck) * time.Second
+	}
+
+	worker := worker.NewHealhCheckWorker(zapLogger, conn, interval, retry)
 	go worker.Start(context.Background())
 
 	waitForShutdown()

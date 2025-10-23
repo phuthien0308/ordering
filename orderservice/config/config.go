@@ -28,14 +28,14 @@ type MongoDBConfig struct {
 }
 
 func init() {
-	register()
+	//register()
 	//go func() { loadConfig("/orderservice/db", Config.Db) }()
 }
 
 func register() {
 	_, err := clients.ConfigClient.Register(context.Background(), &pb.RegisterRequest{
 		Appname: helper.AppName,
-		Ip:      helper.HealthCheckEndpoint,
+		Ip:      helper.HealthCheckEndpoint(8081),
 	})
 	if err != nil {
 		panic(err)

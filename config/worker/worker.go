@@ -2,8 +2,9 @@ package worker
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"math/rand"
+
 	"net/http"
 	"sync"
 	"time"
@@ -19,27 +20,30 @@ type Worker interface {
 }
 
 type serviceAddress struct {
-	name    string
-	address []string
+	appName string
+	address string
+	appNode string
 	err     error
 }
 
 func (svc *serviceAddress) String() string {
-	return fmt.Sprintf("{'name':%v,'adddress':%v,'err':%v}", svc.name, svc.address, svc.err)
+	return fmt.Sprintf("{'name':%v,'adddress':%v,'appNode':%v,'err':%v}", svc.appName, svc.address, svc.appNode, svc.err)
 }
 
 type workerImpl struct {
 	logger   *zap.Logger
 	conn     *zk.Conn
 	interval time.Duration
+	retry    time.Duration
 	logic    *internal.Config
 }
 
-func NewHealhCheckWorker(l *zap.Logger, con *zk.Conn, interval time.Duration) Worker {
+func NewHealhCheckWorker(l *zap.Logger, con *zk.Conn, interval time.Duration, retry time.Duration) Worker {
 	return &workerImpl{
 		conn:     con,
 		logger:   l,
 		interval: interval,
+		retry:    retry,
 		logic:    internal.NewConfig(con, l),
 	}
 }
@@ -51,72 +55,71 @@ func (w *workerImpl) Start(ctx context.Context) {
 			w.logger.Error("panic", zap.Error(fmt.Errorf("error: %v", err)))
 		}
 	}()
+	w.logger.Info("starting worker health check", zap.String("interval", w.interval.String()), zap.String("retryRate", w.retry.String()))
+
 	ticker := time.NewTicker(w.interval)
 	for range ticker.C {
-		children, _, err := w.conn.Children("/services")
-		w.logger.Info("pulled children", zap.Strings("children", children))
-
+		apps, _, err := w.conn.Children("/services")
 		if err != nil {
+			w.logger.Error("can not pull the children", zap.Error(err))
 			// should fire the alert because the application does not get the children node
 			continue
 		}
+		for _, app := range apps {
+			go func() {
+				w.logger.Info("pulled all ips", zap.String("app", app))
 
-		serviceChan := w.pullAddress(children)
+				serviceChan, err := w.pullAddress(app)
+				if err != nil {
+					w.logger.Error("error while pulling ip for app", zap.Error(err), zap.String("app", app))
+				}
 
-		for svc := range serviceChan {
-			if svc.err != nil {
-				// should fire alert
-				w.logger.Error("error while pulling address", zap.Error(svc.err))
-				continue
-			}
-			go w.healthCheck(ctx, svc)
+				for svc := range serviceChan {
+					if svc.err != nil {
+						// should fire alert
+						continue
+					}
+					go w.healthCheck(ctx, svc)
 
+				}
+			}()
 		}
+
 	}
 }
 
-func (w *workerImpl) healthCheck(ctx context.Context, svc *serviceAddress) error {
+func (w *workerImpl) healthCheck(ctx context.Context, svc *serviceAddress) {
 	defer w.logger.Info("finished the health check for service", zap.Stringer("service", svc))
 	w.logger.Info("starting the health check for service", zap.Stringer("service", svc))
-	for _, adr := range svc.address {
-		// retry with backoff time.
-		// we only support http healthz check
-		res, err := http.Get(adr)
-		if err != nil || res.StatusCode != http.StatusOK {
-			w.logger.Info("remove the unhealthy address", zap.String("address", adr))
-			w.logic.Deregister(ctx, svc.name, adr)
-		}
+	// retry with backoff time.
+	// we only support http healthz check
+	res, err := http.Get(svc.address)
+	if err != nil || res.StatusCode != http.StatusOK {
+		w.logger.Info("remove the unhealthy address", zap.String("address", svc.address))
+		retry(func() error {
+			return w.logic.Deregister(ctx, svc.appName, svc.appNode)
+		}, w.retry)
 	}
-	return nil
 }
 
-func (w *workerImpl) pullAddress(children []string) <-chan *serviceAddress {
+func (w *workerImpl) pullAddress(appName string) (<-chan *serviceAddress, error) {
+	path := fmt.Sprintf("/services/%v", appName)
+	allChildren, _, err := w.conn.Children(path)
+	if err != nil {
+		w.logger.Error("can not get children", zap.Error(err))
+		return nil, err
+	}
 	serviceChan := make(chan *serviceAddress)
 	wg := &sync.WaitGroup{}
-	wg.Add(len(children))
-	for _, v := range children {
+	wg.Add(len(allChildren))
+	for _, node := range allChildren {
 		go func() {
-			defer wg.Done()
-			data, _, err := w.conn.Get(fmt.Sprintf("/services/%v", v))
+			nodePath := fmt.Sprintf("%v/%v", path, node)
+			ip, _, err := w.conn.Get(nodePath)
 			if err != nil {
-				serviceChan <- &serviceAddress{
-					name: v,
-					err:  err,
-				}
-				return
+				serviceChan <- &serviceAddress{appName: appName, err: err}
 			}
-			var address []string
-			err = json.Unmarshal(data, &address)
-			if err != nil {
-				serviceChan <- &serviceAddress{
-					name: v,
-					err:  err,
-				}
-			}
-			serviceChan <- &serviceAddress{
-				name:    v,
-				address: address,
-			}
+			serviceChan <- &serviceAddress{appName: appName, appNode: node, address: string(ip)}
 		}()
 	}
 
@@ -124,5 +127,22 @@ func (w *workerImpl) pullAddress(children []string) <-chan *serviceAddress {
 		wg.Wait()
 		close(serviceChan)
 	}()
-	return serviceChan
+
+	return serviceChan, nil
+
+}
+
+func retry(f func() error, rate time.Duration) {
+
+	ticker := time.NewTicker(rate)
+
+	randomMillis := rand.Intn(100)
+	if err := f(); err != nil {
+		for err != nil {
+			fmt.Println("retry")
+			<-ticker.C
+			err = f()
+			ticker = time.NewTicker(rate + time.Duration(randomMillis)*time.Millisecond)
+		}
+	}
 }

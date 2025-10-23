@@ -10,8 +10,8 @@ var POD_ID = func() string {
 	if os.Getenv("POD_IP") != "" {
 		return os.Getenv("POD_IP")
 	}
-	return "localhost:8081"
+	return "localhost"
 }()
-var HealthCheckEndpoint = func() string {
-	return fmt.Sprintf("http://%v/healthz", POD_ID)
-}()
+var HealthCheckEndpoint = func(port uint) string {
+	return fmt.Sprintf("http://%v:%v/healthz", POD_ID, port)
+}

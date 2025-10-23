@@ -125,3 +125,9 @@ affinity: {}
 env:          
  - name: "hosts"
    value: "zookeeper-single.zookeeper-single.svc.cluster.local" 
+ - name: "env"
+   value: "dev"
+ - name: "retryInSecond"
+   value: 1
+ - name: "healthCheckInSecond"
+   value: 2      

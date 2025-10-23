@@ -51,11 +51,11 @@ func (cf *ConfigImpl) Watch(request *pb.ConfigRequest, response grpc.ServerStrea
 
 func (cf *ConfigImpl) Register(ctx context.Context, rq *pb.RegisterRequest) (*pb.RegisterResponse, error) {
 
-	err := cf.Logic.Register(ctx, rq.Appname, rq.Ip)
+	appNode, err := cf.Logic.Register(ctx, rq.Appname, rq.Ip)
 	if err != nil {
 		return nil, err
 	}
-	return &pb.RegisterResponse{}, nil
+	return &pb.RegisterResponse{AppNode: appNode}, nil
 
 }
 
