@@ -51,7 +51,7 @@ func (cf *ConfigImpl) Watch(request *pb.ConfigRequest, response grpc.ServerStrea
 
 func (cf *ConfigImpl) Register(ctx context.Context, rq *pb.RegisterRequest) (*pb.RegisterResponse, error) {
 
-	appNode, err := cf.Logic.Register(ctx, rq.Appname, rq.Ip)
+	appNode, err := cf.Logic.Register(ctx, rq.Appname, rq.Ip, rq.HealthCheckEndpoint)
 	if err != nil {
 		return nil, err
 	}

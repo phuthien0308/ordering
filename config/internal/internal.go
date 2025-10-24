@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -11,6 +12,16 @@ import (
 	"github.com/go-zookeeper/zk"
 	"go.uber.org/zap"
 )
+
+type registration struct {
+	ipAddress           string
+	healthCheckEndpoint string
+}
+
+func (r *registration) String() string {
+	json, _ := json.Marshal(r)
+	return string(json)
+}
 
 type Config struct {
 	Conn   *zk.Conn
@@ -33,10 +44,15 @@ func (cf *Config) Get(ctx context.Context, path string) (string, error) {
 	return string(data), nil
 }
 
-func (cf *Config) Register(ctx context.Context, appName string, ip string) (string, error) {
+func (cf *Config) Register(ctx context.Context, appName string, ip string, healthCheck string) (string, error) {
 
 	defer cf.Logger.Info("finished registering", zap.String("appname", appName), zap.String("ip", ip))
 	appNode := time.Now().UTC().UnixNano()
+	appPath := fmt.Sprintf("/services/%s", appName)
+	appPathExisted, _, _ := cf.Conn.Exists(appPath)
+	if !appPathExisted {
+		_, _ = cf.Conn.Create(appPath, []byte{}, zk.FlagPersistent, zk.WorldACL(zk.PermAll))
+	}
 	path := fmt.Sprintf("/services/%s/%v", appName, appNode)
 	cf.Logger.Info("starting registering", zap.String("path", path), zap.String("appname", appName), zap.String("ip", ip))
 	existed, _, err := cf.Conn.Exists(path)
@@ -45,7 +61,8 @@ func (cf *Config) Register(ctx context.Context, appName string, ip string) (stri
 	}
 
 	if !existed {
-		_, err := cf.Conn.Create(path, []byte(ip), zk.FlagPersistent, zk.WorldACL(zk.PermAll))
+		reg := &registration{ipAddress: ip, healthCheckEndpoint: healthCheck}
+		_, err := cf.Conn.Create(path, []byte(reg.String()), zk.FlagPersistent, zk.WorldACL(zk.PermAll))
 		if err != nil {
 			cf.Logger.Error("can not register", zap.Error(err), zap.String("ip", ip))
 			return "", err
