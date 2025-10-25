@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 
@@ -20,14 +21,15 @@ type Worker interface {
 }
 
 type serviceAddress struct {
-	appName string
-	address string
-	appNode string
-	err     error
+	appName             string
+	address             string
+	appNode             string
+	healthCheckEndpoint string
+	err                 error
 }
 
 func (svc *serviceAddress) String() string {
-	return fmt.Sprintf("{'name':%v,'adddress':%v,'appNode':%v,'err':%v}", svc.appName, svc.address, svc.appNode, svc.err)
+	return fmt.Sprintf("{'name':%v,'adddress':%v,'appNode':%v,'healhCheckEndpoint':%v,'err':%v}", svc.appName, svc.address, svc.appNode, svc.healthCheckEndpoint, svc.err)
 }
 
 type workerImpl struct {
@@ -80,11 +82,9 @@ func (w *workerImpl) Start(ctx context.Context) {
 						continue
 					}
 					go w.healthCheck(ctx, svc)
-
 				}
 			}()
 		}
-
 	}
 }
 
@@ -93,9 +93,9 @@ func (w *workerImpl) healthCheck(ctx context.Context, svc *serviceAddress) {
 	w.logger.Info("starting the health check for service", zap.Stringer("service", svc))
 	// retry with backoff time.
 	// we only support http healthz check
-	res, err := http.Get(svc.address)
+	res, err := http.Get(svc.healthCheckEndpoint)
 	if err != nil || res.StatusCode != http.StatusOK {
-		w.logger.Info("remove the unhealthy address", zap.String("address", svc.address))
+		w.logger.Error("remove the unhealthy address", zap.Error(err), zap.String("address", svc.healthCheckEndpoint))
 		retry(func() error {
 			return w.logic.Deregister(ctx, svc.appName, svc.appNode)
 		}, w.retry)
@@ -115,11 +115,18 @@ func (w *workerImpl) pullAddress(appName string) (<-chan *serviceAddress, error)
 	for _, node := range allChildren {
 		go func() {
 			nodePath := fmt.Sprintf("%v/%v", path, node)
-			ip, _, err := w.conn.Get(nodePath)
+			data, _, err := w.conn.Get(nodePath)
 			if err != nil {
 				serviceChan <- &serviceAddress{appName: appName, err: err}
 			}
-			serviceChan <- &serviceAddress{appName: appName, appNode: node, address: string(ip)}
+			reg := internal.Registration{}
+			err = json.Unmarshal(data, &reg)
+			if err != nil {
+				w.logger.Error("can not marshal", zap.Error(err))
+				serviceChan <- &serviceAddress{appName: appName, err: err}
+			}
+			serviceChan <- &serviceAddress{appName: appName,
+				appNode: node, address: reg.IpAddress, healthCheckEndpoint: reg.HealthCheckEndpoint}
 		}()
 	}
 

@@ -110,11 +110,12 @@ func (x *ConfigResponse) GetData() string {
 }
 
 type RegisterRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Appname       string                 `protobuf:"bytes,1,opt,name=appname,proto3" json:"appname,omitempty"`
-	Ip            string                 `protobuf:"bytes,2,opt,name=ip,proto3" json:"ip,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	Appname             string                 `protobuf:"bytes,1,opt,name=appname,proto3" json:"appname,omitempty"`
+	Ip                  string                 `protobuf:"bytes,2,opt,name=ip,proto3" json:"ip,omitempty"`
+	HealthCheckEndpoint string                 `protobuf:"bytes,3,opt,name=healthCheckEndpoint,proto3" json:"healthCheckEndpoint,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *RegisterRequest) Reset() {
@@ -157,6 +158,13 @@ func (x *RegisterRequest) GetAppname() string {
 func (x *RegisterRequest) GetIp() string {
 	if x != nil {
 		return x.Ip
+	}
+	return ""
+}
+
+func (x *RegisterRequest) GetHealthCheckEndpoint() string {
+	if x != nil {
+		return x.HealthCheckEndpoint
 	}
 	return ""
 }
@@ -301,10 +309,11 @@ const file_config_proto_rawDesc = "" +
 	"\rConfigRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"$\n" +
 	"\x0eConfigResponse\x12\x12\n" +
-	"\x04data\x18\x01 \x01(\tR\x04data\";\n" +
+	"\x04data\x18\x01 \x01(\tR\x04data\"m\n" +
 	"\x0fRegisterRequest\x12\x18\n" +
 	"\aappname\x18\x01 \x01(\tR\aappname\x12\x0e\n" +
-	"\x02ip\x18\x02 \x01(\tR\x02ip\",\n" +
+	"\x02ip\x18\x02 \x01(\tR\x02ip\x120\n" +
+	"\x13healthCheckEndpoint\x18\x03 \x01(\tR\x13healthCheckEndpoint\",\n" +
 	"\x10RegisterResponse\x12\x18\n" +
 	"\aappNode\x18\x01 \x01(\tR\aappNode\"=\n" +
 	"\x11DeregisterRequest\x12\x18\n" +

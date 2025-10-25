@@ -44,9 +44,7 @@ func (cf *ConfigImpl) Watch(request *pb.ConfigRequest, response grpc.ServerStrea
 				return err
 			}
 		}
-
 	}
-
 }
 
 func (cf *ConfigImpl) Register(ctx context.Context, rq *pb.RegisterRequest) (*pb.RegisterResponse, error) {

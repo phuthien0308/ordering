@@ -80,6 +80,8 @@ github.com/go-playground/universal-translator
 # github.com/go-playground/validator/v10 v10.28.0
 ## explicit; go 1.24.0
 github.com/go-playground/validator/v10
+# github.com/go-zookeeper/zk v1.0.4
+## explicit; go 1.13
 # github.com/goccy/go-json v0.10.5
 ## explicit; go 1.19
 github.com/goccy/go-json
@@ -145,7 +147,7 @@ github.com/pelletier/go-toml/v2/unstable
 ## explicit; go 1.24.2
 github.com/phuthien0308/ordering/common/log
 github.com/phuthien0308/ordering/common/log/tags
-# github.com/phuthien0308/ordering/config v0.0.0-20251023215947-3589509964d1
+# github.com/phuthien0308/ordering/config v0.0.0-20251024173349-c1de7d2e47e8
 ## explicit; go 1.24.2
 github.com/phuthien0308/ordering/config/pb
 # github.com/quic-go/qpack v0.5.1
@@ -254,6 +256,10 @@ go.mongodb.org/mongo-driver/v2/x/mongo/driver/topology
 go.mongodb.org/mongo-driver/v2/x/mongo/driver/wiremessage
 # go.uber.org/mock v0.6.0
 ## explicit; go 1.23.0
+# go.uber.org/multierr v1.11.0
+## explicit; go 1.19
+# go.uber.org/zap v1.27.0
+## explicit; go 1.19
 # golang.org/x/arch v0.22.0
 ## explicit; go 1.24.0
 golang.org/x/arch/x86/x86asm

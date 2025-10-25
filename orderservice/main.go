@@ -76,8 +76,9 @@ func main() {
 
 func register() string {
 	response, err := clients.ConfigClient.Register(context.Background(), &pb.RegisterRequest{
-		Appname: helper.AppName,
-		Ip:      helper.HealthCheckEndpoint(8081),
+		Appname:             helper.AppName,
+		Ip:                  helper.POD_ID,
+		HealthCheckEndpoint: helper.HealthCheckEndpoint(8081),
 	})
 	if err != nil {
 		panic(err)

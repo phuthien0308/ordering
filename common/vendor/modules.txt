@@ -7,12 +7,8 @@ github.com/cespare/xxhash/v2
 # github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f
 ## explicit
 github.com/dgryski/go-rendezvous
-# github.com/gopherjs/gopherjs v1.17.2
-## explicit; go 1.17
-github.com/gopherjs/gopherjs/js
-# github.com/jtolds/gls v4.20.0+incompatible
+# github.com/kr/text v0.2.0
 ## explicit
-github.com/jtolds/gls
 # github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
 ## explicit
 github.com/munnerz/goautoneg
@@ -47,31 +43,6 @@ github.com/redis/go-redis/v9/internal/pool
 github.com/redis/go-redis/v9/internal/proto
 github.com/redis/go-redis/v9/internal/rand
 github.com/redis/go-redis/v9/internal/util
-# github.com/smarty/assertions v1.15.0
-## explicit; go 1.18
-github.com/smarty/assertions
-github.com/smarty/assertions/internal/go-diff/diffmatchpatch
-github.com/smarty/assertions/internal/go-render/render
-github.com/smarty/assertions/internal/oglematchers
-# github.com/smartystreets/goconvey v1.8.1
-## explicit; go 1.18
-github.com/smartystreets/goconvey/convey
-github.com/smartystreets/goconvey/convey/gotest
-github.com/smartystreets/goconvey/convey/reporting
-# go.uber.org/multierr v1.11.0
-## explicit; go 1.19
-go.uber.org/multierr
-# go.uber.org/zap v1.27.0
-## explicit; go 1.19
-go.uber.org/zap
-go.uber.org/zap/buffer
-go.uber.org/zap/internal
-go.uber.org/zap/internal/bufferpool
-go.uber.org/zap/internal/color
-go.uber.org/zap/internal/exit
-go.uber.org/zap/internal/pool
-go.uber.org/zap/internal/stacktrace
-go.uber.org/zap/zapcore
 # go.yaml.in/yaml/v2 v2.4.2
 ## explicit; go 1.15
 go.yaml.in/yaml/v2

@@ -13,12 +13,12 @@ import (
 	"go.uber.org/zap"
 )
 
-type registration struct {
-	ipAddress           string
-	healthCheckEndpoint string
+type Registration struct {
+	IpAddress           string `json:"ip_address"`
+	HealthCheckEndpoint string `json:"health_check_endpoint"`
 }
 
-func (r *registration) String() string {
+func (r *Registration) String() string {
 	json, _ := json.Marshal(r)
 	return string(json)
 }
@@ -61,7 +61,7 @@ func (cf *Config) Register(ctx context.Context, appName string, ip string, healt
 	}
 
 	if !existed {
-		reg := &registration{ipAddress: ip, healthCheckEndpoint: healthCheck}
+		reg := &Registration{IpAddress: ip, HealthCheckEndpoint: healthCheck}
 		_, err := cf.Conn.Create(path, []byte(reg.String()), zk.FlagPersistent, zk.WorldACL(zk.PermAll))
 		if err != nil {
 			cf.Logger.Error("can not register", zap.Error(err), zap.String("ip", ip))
