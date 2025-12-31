@@ -30,3 +30,34 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Ignore the .terraform directory, which stores downloaded providers and modules
+.terraform/
+
+# Ignore Terraform state files and backups (best practice is to use a remote backend)
+*.tfstate
+*.tfstate.*.backup
+
+# Ignore tfplan files (plan output of command: terraform plan -out=tfplan)
+# example: *tfplan*
+
+# Ignore crash log files
+crash.log
+crash.*.log
+
+# Ignore CLI configuration files
+.terraformrc
+terraform.rc
+
+# Optional: Ignore all .tfvars files, as they may contain sensitive data
+# You should use a secrets management tool or environment variables instead
+# *.tfvars
+# *.tfvars.json
+
+# Ignore override files used for local development
+# override.tf
+# override.tf.json
+# *_override.tf
+# *_override.tf.json
+
+.DS_Store

@@ -2,94 +2,51 @@ package internal
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"strconv"
-	"time"
 
-	"errors"
-
-	"github.com/go-zookeeper/zk"
+	"github.com/phuthien0308/ordering/config/storage"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
-type Registration struct {
-	IpAddress           string `json:"ip_address"`
-	HealthCheckEndpoint string `json:"health_check_endpoint"`
+type ConfigV1 interface {
+	Register(ctx context.Context, appName string, ip string) error
+	Deregister(ctx context.Context, appName string, ip string) error
+	GetAllAddresses(ctx context.Context, appname string) ([]string, error)
 }
 
-func (r *Registration) String() string {
-	json, _ := json.Marshal(r)
-	return string(json)
-}
-
-type Config struct {
-	Conn   *zk.Conn
-	Logger *zap.Logger
-}
-
-func NewConfig(Conn *zk.Conn, Logger *zap.Logger) *Config {
-	return &Config{
-		Conn:   Conn,
-		Logger: Logger,
+func NewConfigV1(rd *redis.Client, logger *zap.Logger) ConfigV1 {
+	nodeStorage := storage.NewAddressStorage(rd)
+	return &configV1{
+		nodeStorage: nodeStorage,
+		logger:      logger,
 	}
 }
 
-func (cf *Config) Get(ctx context.Context, path string) (string, error) {
-	data, _, err := cf.Conn.Get(path)
+type configV1 struct {
+	nodeStorage storage.AddressStorage
+	logger      *zap.Logger
+}
+
+// GetAllAddresses implements ConfigV1.
+func (c *configV1) GetAllAddresses(ctx context.Context, appname string) ([]string, error) {
+	ips, err := c.nodeStorage.GetAddresses(ctx, appname)
 	if err != nil {
-		cf.Logger.Error("can not get path", zap.String("path", path), zap.Error(err))
-		return "", err
+		c.logger.Error("can not get all addresses", zap.String("appname", appname), zap.Error(err))
+		return []string{}, err
 	}
-	return string(data), nil
+	return ips, nil
 }
 
-func (cf *Config) Register(ctx context.Context, appName string, ip string, healthCheck string) (string, error) {
-
-	defer cf.Logger.Info("finished registering", zap.String("appname", appName), zap.String("ip", ip))
-	appNode := time.Now().UTC().UnixNano()
-	appPath := fmt.Sprintf("/services/%s", appName)
-	appPathExisted, _, _ := cf.Conn.Exists(appPath)
-	if !appPathExisted {
-		_, _ = cf.Conn.Create(appPath, []byte{}, zk.FlagPersistent, zk.WorldACL(zk.PermAll))
-	}
-	path := fmt.Sprintf("/services/%s/%v", appName, appNode)
-	cf.Logger.Info("starting registering", zap.String("path", path), zap.String("appname", appName), zap.String("ip", ip))
-	existed, _, err := cf.Conn.Exists(path)
+// Register implements ConfigV1.
+func (c *configV1) Register(ctx context.Context, appName string, ip string) error {
+	err := c.nodeStorage.Add(ctx, appName, ip)
 	if err != nil {
-		return "", err
-	}
-
-	if !existed {
-		reg := &Registration{IpAddress: ip, HealthCheckEndpoint: healthCheck}
-		_, err := cf.Conn.Create(path, []byte(reg.String()), zk.FlagPersistent, zk.WorldACL(zk.PermAll))
-		if err != nil {
-			cf.Logger.Error("can not register", zap.Error(err), zap.String("ip", ip))
-			return "", err
-		}
-		return strconv.Itoa(int(appNode)), nil
-	}
-
-	return "", errors.New("can not register")
-}
-
-func (cf *Config) Deregister(ctx context.Context, appName string, ip string) error {
-	cf.Logger.Info("starting deregistering", zap.String("appname", appName), zap.String("ip", ip))
-	defer cf.Logger.Info("finished deregistering", zap.String("appname", appName), zap.String("ip", ip))
-	path := fmt.Sprintf("/services/%s/%s", appName, ip)
-	existed, stats, err := cf.Conn.Exists(path)
-	if err != nil {
-		cf.Logger.Error("can not deregister", zap.String("path", path), zap.String("ip", ip), zap.Error(err))
-		return err
-	}
-	if !existed {
-		cf.Logger.Info("the path is not existed", zap.String("path", path))
-		return nil
-	}
-	err = cf.Conn.Delete(path, stats.Version)
-	if err != nil {
-		cf.Logger.Error("can not deregister", zap.String("path", path), zap.Error(err))
 		return err
 	}
 	return nil
+}
+
+// Deregister implements ConfigV1.
+func (c *configV1) Deregister(ctx context.Context, appName string, ip string) error {
+	return c.nodeStorage.Remove(ctx, appName, ip)
 }

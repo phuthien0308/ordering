@@ -11,8 +11,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/phuthien0308/ordering/config/pb"
 	"github.com/phuthien0308/ordering/orderservice/clients"
+	"github.com/phuthien0308/ordering/orderservice/config"
 	"github.com/phuthien0308/ordering/orderservice/handler"
 	"github.com/phuthien0308/ordering/orderservice/helper"
+	"google.golang.org/grpc/metadata"
 )
 
 func main() {
@@ -67,15 +69,19 @@ func main() {
 	termChan := make(chan os.Signal, 1)
 	signal.Notify(termChan, syscall.SIGINT, syscall.SIGTERM)
 	<-termChan
-
-	clients.ConfigClient.Deregister(context.Background(), &pb.DeregisterRequest{
+	md := metadata.Pairs("x-request-id", "abce")
+	outgoing := metadata.NewOutgoingContext(context.TODO(), md)
+	clients.ConfigClient.Deregister(outgoing, &pb.DeregisterRequest{
 		Appname: helper.AppName,
 		Ip:      appNode,
 	})
+	config.MongoDB.Client().Disconnect(context.Background())
 }
 
 func register() string {
-	response, err := clients.ConfigClient.Register(context.Background(), &pb.RegisterRequest{
+	md := metadata.Pairs("x-request-id", "abce")
+	outgoingContext := metadata.NewOutgoingContext(context.Background(), md)
+	response, err := clients.ConfigClient.Register(outgoingContext, &pb.RegisterRequest{
 		Appname:             helper.AppName,
 		Ip:                  helper.POD_ID,
 		HealthCheckEndpoint: helper.HealthCheckEndpoint(8081),

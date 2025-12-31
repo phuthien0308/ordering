@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"github.com/phuthien0308/ordering/common/log"
+	"github.com/phuthien0308/ordering/orderservice/config"
 	"github.com/phuthien0308/ordering/orderservice/model"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
@@ -15,17 +15,17 @@ type OrderRepository interface {
 	Delete(ctx context.Context, id string) error
 }
 
-var Order OrderRepository = &orderRepository{}
+var Order OrderRepository = func() *orderRepository {
+	return &orderRepository{db: config.MongoDB}
+}()
 
 type orderRepository struct {
-	db     mongo.Database
-	logger log.Logger
+	db *mongo.Database
 }
 
 func (repo *orderRepository) Add(ctx context.Context, item model.Order) (string, error) {
 	result, err := repo.db.Collection("orders").InsertOne(ctx, item)
 	if err != nil {
-		repo.logger.Error(ctx, "can not insert item", err, log.NewTag("item", item))
 		return "", err
 	}
 	return string(result.InsertedID.([]byte)), nil

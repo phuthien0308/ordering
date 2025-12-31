@@ -2,154 +2,89 @@ package worker
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"math/rand"
-
 	"net/http"
-	"sync"
+
 	"time"
 
-	"github.com/go-zookeeper/zk"
-	"github.com/phuthien0308/ordering/config/internal"
+	retry "github.com/avast/retry-go/v5"
+	"github.com/phuthien0308/ordering/config/storage"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
+
+/*
+The worker helps check the healthy of all registered services. Typically, the service deregisters itself when it stops.
+However, there are some situations that the service can't deregister it, so this worker will check and remove the service.
+The hardest thing is to confirm whether the service is dead or not because the network latency can affect the final decision.
+-  If a service was removed from the registry but it was still alive, what would we do?
+-- it calls the config service constantly to confirm its status.
+*/
 
 type Worker interface {
 	// start the background health check for all services.
 	Start(ctx context.Context)
 }
 
-type serviceAddress struct {
-	appName             string
-	address             string
-	appNode             string
-	healthCheckEndpoint string
-	err                 error
-}
-
-func (svc *serviceAddress) String() string {
-	return fmt.Sprintf("{'name':%v,'adddress':%v,'appNode':%v,'healhCheckEndpoint':%v,'err':%v}", svc.appName, svc.address, svc.appNode, svc.healthCheckEndpoint, svc.err)
-}
-
 type workerImpl struct {
-	logger   *zap.Logger
-	conn     *zk.Conn
-	interval time.Duration
-	retry    time.Duration
-	logic    *internal.Config
+	logger      *zap.Logger
+	interval    time.Duration
+	nodeStorage storage.AddressStorage
 }
 
-func NewHealhCheckWorker(l *zap.Logger, con *zk.Conn, interval time.Duration, retry time.Duration) Worker {
+func NewHealhCheckWorker(l *zap.Logger, rd *redis.Client, interval time.Duration) Worker {
 	return &workerImpl{
-		conn:     con,
-		logger:   l,
-		interval: interval,
-		retry:    retry,
-		logic:    internal.NewConfig(con, l),
+		logger:      l,
+		interval:    interval,
+		nodeStorage: storage.NewAddressStorage(rd),
 	}
 }
 
 func (w *workerImpl) Start(ctx context.Context) {
-
-	defer func() {
-		if err := recover(); err != nil {
-			w.logger.Error("panic", zap.Error(fmt.Errorf("error: %v", err)))
-		}
-	}()
-	w.logger.Info("starting worker health check", zap.String("interval", w.interval.String()), zap.String("retryRate", w.retry.String()))
+	w.logger.Info("start the health check worker")
 
 	ticker := time.NewTicker(w.interval)
+
 	for range ticker.C {
-		apps, _, err := w.conn.Children("/services")
-		if err != nil {
-			w.logger.Error("can not pull the children", zap.Error(err))
-			// should fire the alert because the application does not get the children node
-			continue
-		}
-		for _, app := range apps {
-			go func() {
-				w.logger.Info("pulled all ips", zap.String("app", app))
-
-				serviceChan, err := w.pullAddress(app)
-				if err != nil {
-					w.logger.Error("error while pulling ip for app", zap.Error(err), zap.String("app", app))
-				}
-
-				for svc := range serviceChan {
-					if svc.err != nil {
-						// should fire alert
-						continue
+		w.logger.Info("a new health check round is started")
+		allNodes, err := w.nodeStorage.GetAddressOfAllServices(ctx)
+		if err == nil {
+			for _, node := range allNodes {
+				go func() {
+					for _, ip := range node.Ips {
+						go func() {
+							err := w.healthCheck(ip)
+							if err != nil {
+								w.nodeStorage.Remove(ctx, node.AppName, ip)
+							}
+						}()
 					}
-					go w.healthCheck(ctx, svc)
-				}
-			}()
+				}()
+			}
+		} else {
+			w.logger.Error("the health check worker can not connect to redis", zap.Error(err))
 		}
 	}
 }
 
-func (w *workerImpl) healthCheck(ctx context.Context, svc *serviceAddress) {
-	defer w.logger.Info("finished the health check for service", zap.Stringer("service", svc))
-	w.logger.Info("starting the health check for service", zap.Stringer("service", svc))
-	// retry with backoff time.
-	// we only support http healthz check
-	res, err := http.Get(svc.healthCheckEndpoint)
-	if err != nil || res.StatusCode != http.StatusOK {
-		w.logger.Error("remove the unhealthy address", zap.Error(err), zap.String("address", svc.healthCheckEndpoint))
-		retry(func() error {
-			return w.logic.Deregister(ctx, svc.appName, svc.appNode)
-		}, w.retry)
-	}
-}
+func (w *workerImpl) healthCheck(ip string) error {
+	w.logger.Info(fmt.Sprintf("started health check for ip: %v", ip))
 
-func (w *workerImpl) pullAddress(appName string) (<-chan *serviceAddress, error) {
-	path := fmt.Sprintf("/services/%v", appName)
-	allChildren, _, err := w.conn.Children(path)
-	if err != nil {
-		w.logger.Error("can not get children", zap.Error(err))
-		return nil, err
-	}
-	serviceChan := make(chan *serviceAddress)
-	wg := &sync.WaitGroup{}
-	wg.Add(len(allChildren))
-	for _, node := range allChildren {
-		go func() {
-			nodePath := fmt.Sprintf("%v/%v", path, node)
-			data, _, err := w.conn.Get(nodePath)
-			if err != nil {
-				serviceChan <- &serviceAddress{appName: appName, err: err}
-			}
-			reg := internal.Registration{}
-			err = json.Unmarshal(data, &reg)
-			if err != nil {
-				w.logger.Error("can not marshal", zap.Error(err))
-				serviceChan <- &serviceAddress{appName: appName, err: err}
-			}
-			serviceChan <- &serviceAddress{appName: appName,
-				appNode: node, address: reg.IpAddress, healthCheckEndpoint: reg.HealthCheckEndpoint}
-		}()
-	}
+	repeater := retry.New(
+		retry.Attempts(3),
+		retry.Delay(100*time.Millisecond),
+		retry.MaxJitter(100*time.Millisecond))
 
-	go func() {
-		wg.Wait()
-		close(serviceChan)
-	}()
-
-	return serviceChan, nil
-
-}
-
-func retry(f func() error, rate time.Duration) {
-
-	ticker := time.NewTicker(rate)
-
-	randomMillis := rand.Intn(100)
-	if err := f(); err != nil {
-		for err != nil {
-			fmt.Println("retry")
-			<-ticker.C
-			err = f()
-			ticker = time.NewTicker(rate + time.Duration(randomMillis)*time.Millisecond)
+	err := repeater.Do(func() error {
+		healthcheck := fmt.Sprintf("http://%v/healthz", ip)
+		_, err := http.Get(healthcheck)
+		if err != nil {
+			w.logger.Warn("healthcheck result is not healthy", zap.Any("error", err.Error()))
+		} else {
+			w.logger.Info("healthcheck result is healthy")
 		}
-	}
+		return err
+	})
+	w.logger.Info(fmt.Sprintf("finised health check for ip: %v with result %v", ip, err), zap.String("ip", ip))
+	return err
 }
