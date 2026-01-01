@@ -9,9 +9,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/phuthien0308/ordering-contracts/gen/config"
+	"github.com/phuthien0308/ordering/config/consumer"
 	"github.com/phuthien0308/ordering/config/handler"
 	"github.com/phuthien0308/ordering/config/internal"
-	"github.com/phuthien0308/ordering/config/pb"
+	"github.com/phuthien0308/ordering/config/storage"
 	"github.com/phuthien0308/ordering/config/worker"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -50,7 +52,7 @@ func main() {
 	server := grpc.NewServer(grpc.Creds(insecure.NewCredentials()))
 
 	go func() {
-		pb.RegisterConfigServer(server, &handler.ConfigImpl{LogicV1: internal.NewConfigV1(redisClient, zapLogger)})
+		config.RegisterConfigServiceServer(server, &handler.ConfigImpl{LogicV1: internal.NewConfigV1(redisClient, zapLogger)})
 		grpc_health_v1.RegisterHealthServer(server, &healthCheckServer{})
 		if err := server.Serve(lis); err != nil {
 			panic(err)
@@ -58,13 +60,18 @@ func main() {
 	}()
 
 	interval := 10 * time.Second
-
 	worker := worker.NewHealhCheckWorker(zapLogger, redisClient, interval)
 	go worker.Start(context.Background())
-	fmt.Printf("the server is running with port %v\n", port)
+
+	consumer := consumer.NewConsumer(zapLogger, storage.NewAddressStorage(redisClient))
+	consumerSignal, err := consumer.Start(context.Background())
+	if err != nil {
+		panic("can't start consumer")
+	}
 	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGTERM)
-	broastcastShutdown(sig)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+	fmt.Printf("the server is running with port %v\n", port)
+	broastcastShutdown(sig, consumerSignal)
 	fmt.Println("Shutting down gracefully...")
 	fmt.Println("Service stopped.")
 }
@@ -77,9 +84,11 @@ func (health *healthCheckServer) Check(context.Context, *grpc_health_v1.HealthCh
 	return &grpc_health_v1.HealthCheckResponse{Status: grpc_health_v1.HealthCheckResponse_SERVING}, nil
 }
 
-func broastcastShutdown(sig chan os.Signal) {
+func broastcastShutdown(sig chan os.Signal, chans ...chan interface{}) {
 	<-sig
-
+	for _, ch := range chans {
+		ch <- struct{}{}
+	}
 }
 
 func initRedisClient() *redis.Client {

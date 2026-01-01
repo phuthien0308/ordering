@@ -7,6 +7,7 @@ require (
 	github.com/avast/retry-go/v5 v5.0.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.95.0
 	github.com/confluentinc/confluent-kafka-go v1.9.2
+	github.com/phuthien0308/ordering-contracts/gen/config v0.0.0-20260101024952-665c3144e694
 	github.com/redis/go-redis/v9 v9.17.2
 	github.com/smartystreets/goconvey v1.8.1
 	go.uber.org/zap v1.27.0
@@ -29,7 +30,6 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/jtolds/gls v4.20.0+incompatible // indirect
-	github.com/phuthien0308/ordering-contracts/gen/config v0.0.0-20251231155333-61d59e743280 // indirect
 	github.com/smarty/assertions v1.15.0 // indirect
 	github.com/yuin/gopher-lua v1.1.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect

@@ -1,0 +1,2 @@
+start:
+	REDIS_HOST=127.0.0.1:6379 KAFKA_HOST=127.0.0.1:9092 go run .
