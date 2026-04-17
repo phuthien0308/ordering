@@ -117,6 +117,9 @@ github.com/jtolds/gls
 # github.com/phuthien0308/ordering-contracts/gen/config v0.0.0-20260101024952-665c3144e694
 ## explicit; go 1.24.2
 github.com/phuthien0308/ordering-contracts/gen/config
+# github.com/phuthien0308/simplelog v0.0.1
+## explicit; go 1.25.5
+github.com/phuthien0308/simplelog
 # github.com/redis/go-redis/v9 v9.17.2
 ## explicit; go 1.18
 github.com/redis/go-redis/v9
@@ -150,10 +153,12 @@ github.com/yuin/gopher-lua
 github.com/yuin/gopher-lua/ast
 github.com/yuin/gopher-lua/parse
 github.com/yuin/gopher-lua/pm
+# go.opentelemetry.io/otel v1.39.0
+## explicit; go 1.24.0
 # go.uber.org/multierr v1.11.0
 ## explicit; go 1.19
 go.uber.org/multierr
-# go.uber.org/zap v1.27.0
+# go.uber.org/zap v1.27.1
 ## explicit; go 1.19
 go.uber.org/zap
 go.uber.org/zap/buffer

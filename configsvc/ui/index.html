@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Config Center | JSON Editor</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0" />
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar glass-panel">
+            <div class="sidebar-header">
+                <span class="material-symbols-outlined logo-icon">folder_data</span>
+                <h2>Services</h2>
+                <div style="flex: 1"></div>
+                <button class="btn-icon-soft" id="btn-add-service" title="Add New Service">
+                    <span class="material-symbols-outlined">add</span>
+                </button>
+            </div>
+            <ul class="tree-nav" id="service-list">
+                <!-- Populated by JS -->
+            </ul>
+        </aside>
+
+        <!-- Main Editor Area -->
+        <main class="editor-area glass-panel">
+            <header class="editor-header">
+                <div class="file-info">
+                    <span class="material-symbols-outlined">description</span>
+                    <h3 id="current-file-name">Select a service</h3>
+                    <select id="version-select" class="version-select" style="display: none;">
+                        <!-- JS populated -->
+                    </select>
+                    <span class="status-badge" id="save-status">Unsaved</span>
+                </div>
+                <div class="editor-actions">
+                    <button class="btn btn-secondary" id="btn-format" title="Format JSON">
+                        <span class="material-symbols-outlined">data_object</span> Format
+                    </button>
+                    <button class="btn btn-secondary" id="btn-save-update" disabled title="Overwrite this version">
+                        <span class="material-symbols-outlined">save</span> Update
+                    </button>
+                    <button class="btn btn-primary" id="btn-save-new" disabled title="Save as a new version">
+                        <span class="material-symbols-outlined">library_add</span> New Version
+                    </button>
+                </div>
+            </header>
+            
+            <div class="editor-container">
+                <!-- Line numbers -->
+                <div class="line-numbers" id="line-numbers">1</div>
+                <!-- Textarea for JSON -->
+                <textarea id="json-editor" spellcheck="false" placeholder="// Select a service from the sidebar to view and edit its JSON configuration...&#10;// E.g.&#10;{&#10;  &quot;database&quot;: {&#10;    &quot;host&quot;: &quot;db.internal&quot;&#10;  }&#10;}"></textarea>
+            </div>
+            
+            <!-- Optional error bar -->
+            <div class="error-bar" id="error-bar">
+                <span class="material-symbols-outlined">error</span>
+                <span id="error-text">Invalid JSON format</span>
+            </div>
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

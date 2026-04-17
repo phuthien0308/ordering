@@ -1,6 +1,6 @@
 module github.com/phuthien0308/ordering/config
 
-go 1.24.2
+go 1.25.5
 
 require (
 	github.com/alicebob/miniredis/v2 v2.35.0
@@ -8,9 +8,10 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.95.0
 	github.com/confluentinc/confluent-kafka-go v1.9.2
 	github.com/phuthien0308/ordering-contracts/gen/config v0.0.0-20260101024952-665c3144e694
+	github.com/phuthien0308/simplelog v0.0.1
 	github.com/redis/go-redis/v9 v9.17.2
 	github.com/smartystreets/goconvey v1.8.1
-	go.uber.org/zap v1.27.0
+	go.uber.org/zap v1.27.1
 	google.golang.org/grpc v1.78.0
 	google.golang.org/protobuf v1.36.11
 )
@@ -32,6 +33,7 @@ require (
 	github.com/jtolds/gls v4.20.0+incompatible // indirect
 	github.com/smarty/assertions v1.15.0 // indirect
 	github.com/yuin/gopher-lua v1.1.1 // indirect
+	go.opentelemetry.io/otel v1.39.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect

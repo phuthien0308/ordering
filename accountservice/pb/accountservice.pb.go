@@ -9,7 +9,7 @@ package pb
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	_ "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -25,7 +25,7 @@ const (
 type CreatedAccountRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Address       string                 `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
+	Address       []*Address             `protobuf:"bytes,2,rep,name=address,proto3" json:"address,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -67,11 +67,11 @@ func (x *CreatedAccountRequest) GetName() string {
 	return ""
 }
 
-func (x *CreatedAccountRequest) GetAddress() string {
+func (x *CreatedAccountRequest) GetAddress() []*Address {
 	if x != nil {
 		return x.Address
 	}
-	return ""
+	return nil
 }
 
 type CreatedAccountResponse struct {
@@ -118,65 +118,18 @@ func (x *CreatedAccountResponse) GetAccountId() string {
 	return ""
 }
 
-type DeletedAccountRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	AccountID     string                 `protobuf:"bytes,1,opt,name=accountID,proto3" json:"accountID,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *DeletedAccountRequest) Reset() {
-	*x = DeletedAccountRequest{}
-	mi := &file_accountservice_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *DeletedAccountRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*DeletedAccountRequest) ProtoMessage() {}
-
-func (x *DeletedAccountRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_accountservice_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use DeletedAccountRequest.ProtoReflect.Descriptor instead.
-func (*DeletedAccountRequest) Descriptor() ([]byte, []int) {
-	return file_accountservice_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *DeletedAccountRequest) GetAccountID() string {
-	if x != nil {
-		return x.AccountID
-	}
-	return ""
-}
-
 var File_accountservice_proto protoreflect.FileDescriptor
 
 const file_accountservice_proto_rawDesc = "" +
 	"\n" +
-	"\x14accountservice.proto\x1a\x1bgoogle/protobuf/empty.proto\"E\n" +
+	"\x14accountservice.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\raddress.proto\"O\n" +
 	"\x15CreatedAccountRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
-	"\aaddress\x18\x02 \x01(\tR\aaddress\"6\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\"\n" +
+	"\aaddress\x18\x02 \x03(\v2\b.AddressR\aaddress\"6\n" +
 	"\x16CreatedAccountResponse\x12\x1c\n" +
-	"\taccountId\x18\x01 \x01(\tR\taccountId\"5\n" +
-	"\x15DeletedAccountRequest\x12\x1c\n" +
-	"\taccountID\x18\x01 \x01(\tR\taccountID2\x97\x01\n" +
+	"\taccountId\x18\x01 \x01(\tR\taccountId2T\n" +
 	"\x0eAccountService\x12B\n" +
-	"\rCreateAccount\x12\x16.CreatedAccountRequest\x1a\x17.CreatedAccountResponse\"\x00\x12A\n" +
-	"\rDeleteAccount\x12\x16.DeletedAccountRequest\x1a\x16.google.protobuf.Empty\"\x00B\aZ\x05./;pbb\x06proto3"
+	"\rCreateAccount\x12\x16.CreatedAccountRequest\x1a\x17.CreatedAccountResponse\"\x00B\aZ\x05./;pbb\x06proto3"
 
 var (
 	file_accountservice_proto_rawDescOnce sync.Once
@@ -190,23 +143,21 @@ func file_accountservice_proto_rawDescGZIP() []byte {
 	return file_accountservice_proto_rawDescData
 }
 
-var file_accountservice_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_accountservice_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_accountservice_proto_goTypes = []any{
 	(*CreatedAccountRequest)(nil),  // 0: CreatedAccountRequest
 	(*CreatedAccountResponse)(nil), // 1: CreatedAccountResponse
-	(*DeletedAccountRequest)(nil),  // 2: DeletedAccountRequest
-	(*emptypb.Empty)(nil),          // 3: google.protobuf.Empty
+	(*Address)(nil),                // 2: Address
 }
 var file_accountservice_proto_depIdxs = []int32{
-	0, // 0: AccountService.CreateAccount:input_type -> CreatedAccountRequest
-	2, // 1: AccountService.DeleteAccount:input_type -> DeletedAccountRequest
+	2, // 0: CreatedAccountRequest.address:type_name -> Address
+	0, // 1: AccountService.CreateAccount:input_type -> CreatedAccountRequest
 	1, // 2: AccountService.CreateAccount:output_type -> CreatedAccountResponse
-	3, // 3: AccountService.DeleteAccount:output_type -> google.protobuf.Empty
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	2, // [2:3] is the sub-list for method output_type
+	1, // [1:2] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_accountservice_proto_init() }
@@ -214,13 +165,14 @@ func file_accountservice_proto_init() {
 	if File_accountservice_proto != nil {
 		return
 	}
+	file_address_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_accountservice_proto_rawDesc), len(file_accountservice_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

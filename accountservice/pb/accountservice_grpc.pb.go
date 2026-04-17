@@ -11,7 +11,6 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -21,7 +20,6 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	AccountService_CreateAccount_FullMethodName = "/AccountService/CreateAccount"
-	AccountService_DeleteAccount_FullMethodName = "/AccountService/DeleteAccount"
 )
 
 // AccountServiceClient is the client API for AccountService service.
@@ -29,7 +27,6 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AccountServiceClient interface {
 	CreateAccount(ctx context.Context, in *CreatedAccountRequest, opts ...grpc.CallOption) (*CreatedAccountResponse, error)
-	DeleteAccount(ctx context.Context, in *DeletedAccountRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type accountServiceClient struct {
@@ -50,22 +47,11 @@ func (c *accountServiceClient) CreateAccount(ctx context.Context, in *CreatedAcc
 	return out, nil
 }
 
-func (c *accountServiceClient) DeleteAccount(ctx context.Context, in *DeletedAccountRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, AccountService_DeleteAccount_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // AccountServiceServer is the server API for AccountService service.
 // All implementations must embed UnimplementedAccountServiceServer
 // for forward compatibility.
 type AccountServiceServer interface {
 	CreateAccount(context.Context, *CreatedAccountRequest) (*CreatedAccountResponse, error)
-	DeleteAccount(context.Context, *DeletedAccountRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedAccountServiceServer()
 }
 
@@ -78,9 +64,6 @@ type UnimplementedAccountServiceServer struct{}
 
 func (UnimplementedAccountServiceServer) CreateAccount(context.Context, *CreatedAccountRequest) (*CreatedAccountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateAccount not implemented")
-}
-func (UnimplementedAccountServiceServer) DeleteAccount(context.Context, *DeletedAccountRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteAccount not implemented")
 }
 func (UnimplementedAccountServiceServer) mustEmbedUnimplementedAccountServiceServer() {}
 func (UnimplementedAccountServiceServer) testEmbeddedByValue()                        {}
@@ -121,24 +104,6 @@ func _AccountService_CreateAccount_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AccountService_DeleteAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeletedAccountRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AccountServiceServer).DeleteAccount(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AccountService_DeleteAccount_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AccountServiceServer).DeleteAccount(ctx, req.(*DeletedAccountRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // AccountService_ServiceDesc is the grpc.ServiceDesc for AccountService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -149,10 +114,6 @@ var AccountService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateAccount",
 			Handler:    _AccountService_CreateAccount_Handler,
-		},
-		{
-			MethodName: "DeleteAccount",
-			Handler:    _AccountService_DeleteAccount_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

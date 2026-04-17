@@ -3,20 +3,27 @@ package storage
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/phuthien0308/ordering/config/dto"
 	"github.com/redis/go-redis/v9"
 )
 
 const SERVICE_ADDRESSES = "service_addresses"
 
+var ALL_SERVICE_KEYS = fmt.Sprintf("%v:*", SERVICE_ADDRESSES)
+
+type Node struct {
+	AppName string
+	Ips     []string
+}
+
 type AddressStorage interface {
 	Add(ctx context.Context, appName, ip string) error
 	Remove(ctx context.Context, appName, ip string) error
 	GetAddresses(ctx context.Context, appName string) ([]string, error)
-	GetAddressOfAllServices(ctx context.Context) ([]dto.Node, error)
+	GetAddressOfAllServices(ctx context.Context) ([]Node, error)
 }
 
 func NewAddressStorage(rd *redis.Client) AddressStorage {
@@ -36,15 +43,15 @@ func (n *addressStorage) GetAddresses(ctx context.Context, appName string) ([]st
 }
 
 // GetIps implements NodeStorage.
-func (n *addressStorage) GetAddressOfAllServices(ctx context.Context) ([]dto.Node, error) {
-	allServiceKeys, err := n.rd.Keys(ctx, fmt.Sprintf("%v:*", SERVICE_ADDRESSES)).Result()
+func (n *addressStorage) GetAddressOfAllServices(ctx context.Context) ([]Node, error) {
+	allServiceKeys, err := n.rd.Keys(ctx, ALL_SERVICE_KEYS).Result()
 	if err != nil {
 		return nil, err
 	}
 	wg := sync.WaitGroup{}
 	wg.Add(len(allServiceKeys))
 
-	dChan := make(chan dto.Node)
+	dChan := make(chan Node)
 	for _, serviceKey := range allServiceKeys {
 		go func() {
 			defer wg.Done()
@@ -52,11 +59,11 @@ func (n *addressStorage) GetAddressOfAllServices(ctx context.Context) ([]dto.Nod
 			if err != nil {
 				return
 			} else {
-				newNode := dto.Node{
-					AppName: serviceKey,
+				svcName, _ := strings.CutPrefix(serviceKey, SERVICE_ADDRESSES)
+				dChan <- Node{
+					AppName: svcName,
 					Ips:     data,
 				}
-				dChan <- newNode
 				return
 			}
 		}()
@@ -67,7 +74,7 @@ func (n *addressStorage) GetAddressOfAllServices(ctx context.Context) ([]dto.Nod
 		close(dChan)
 	}()
 
-	result := []dto.Node{}
+	var result []Node
 	for re := range dChan {
 		result = append(result, re)
 	}

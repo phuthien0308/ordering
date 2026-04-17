@@ -3,23 +3,20 @@ syntax="proto3";
 option go_package = "./;pb";
 
 import "google/protobuf/empty.proto";
+import "address.proto";
 
 
 service AccountService {
-    rpc CreateAccount(CreatedAccountRequest) returns (CreatedAccountResponse){}
-    rpc DeleteAccount(DeletedAccountRequest) returns (google.protobuf.Empty){}
+    rpc CreateAccount(CreatedAccountRequest) returns (CreatedAccountResponse){}    
 }
 
 message CreatedAccountRequest {    
     string name = 1;
-    string address = 2;
+    repeated Address address = 2;
 }
 
 message CreatedAccountResponse {    
     string accountId = 1;
 }
 
-message DeletedAccountRequest {
-    string accountID = 1;
-}
 

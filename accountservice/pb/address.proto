@@ -1,0 +1,9 @@
+syntax="proto3";
+option go_package = "./;pb";
+
+import "google/protobuf/empty.proto";
+
+message Address {
+    string address = 1;
+    bool isPrimary = 2;
+}

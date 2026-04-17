@@ -1,0 +1,10 @@
+{
+    "env": "development",
+    "redis_host": "127.0.0.1:6379",
+    "kafka": {
+        "host": "127.0.0.1:9092",
+        "topic": "service_registry",
+        "offsetType" : "earliest",
+        "consumerGroup": "service_registry"
+    }
+}
