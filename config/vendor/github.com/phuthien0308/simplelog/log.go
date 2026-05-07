@@ -10,15 +10,15 @@ type SimpleLogKey struct{}
 
 var SimpleLogKeyCtx = SimpleLogKey{}
 
-type SimpleZapLogger struct {
+type SimpleLogger struct {
 	*zap.Logger
 }
 
-func NewSimpleZapLogger(logger *zap.Logger) *SimpleZapLogger {
-	return &SimpleZapLogger{logger}
+func NewSimpleLogger(logger *zap.Logger) *SimpleLogger {
+	return &SimpleLogger{logger}
 }
 
-func (logger *SimpleZapLogger) WithContext(ctx context.Context) *SimpleZapLogger {
+func (logger *SimpleLogger) WithContext(ctx context.Context) *SimpleLogger {
 	if fields, ok := ctx.Value(SimpleLogKeyCtx).([]zap.Field); ok {
 		logger.Logger = logger.With(fields...)
 	}

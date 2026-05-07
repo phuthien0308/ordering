@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -13,13 +12,13 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/google/go-jsonnet"
 
 	"github.com/phuthien0308/ordering-base/simplelog"
 	"github.com/phuthien0308/ordering-base/simplelog/tags"
 	"github.com/phuthien0308/ordering-base/tracing"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	"go.opentelemetry.io/otel"
 	"go.uber.org/zap"
 )
 
@@ -37,7 +36,7 @@ func getBucketName() string {
 func main() {
 	zapLogger, _ := zap.NewProduction()
 	defer zapLogger.Sync()
-	logger := simplelog.NewSimpleZapLogger(zapLogger)
+	logger := simplelog.NewSimpleLogger(zapLogger)
 
 	// Initialize Tracing
 	shutdown, err := tracing.DefaultGlobalTracer("configsvc", "http://localhost:9411/api/v2/spans")
@@ -63,7 +62,6 @@ func main() {
 	s3Client := s3.NewFromConfig(cfg, func(o *s3.Options) {
 		o.UsePathStyle = true
 	})
-	tracer := otel.Tracer("configsvc")
 	mux := http.NewServeMux()
 
 	// -------------------------------------------------------------
@@ -90,13 +88,13 @@ func main() {
 	}))
 
 	// -------------------------------------------------------------
-	// GET /api/v1/configs/{service}/versions -> List Versions
+	// GET /api/v1/configs/{service}/versions -> List Template Versions
 	// -------------------------------------------------------------
 	mux.HandleFunc("GET /api/v1/configs/{service}/versions", withCORS(func(w http.ResponseWriter, r *http.Request) {
 		service := r.PathValue("service")
-		prefix := fmt.Sprintf("%s/", service)
+		prefix := fmt.Sprintf("%s/templates/", service)
 
-		// List all files within the service's "folder"
+		// List all files within the service's templates folder
 		output, err := s3Client.ListObjectsV2(r.Context(), &s3.ListObjectsV2Input{
 			Bucket: aws.String(getBucketName()),
 			Prefix: aws.String(prefix),
@@ -109,10 +107,9 @@ func main() {
 
 		var versions []string
 		for _, object := range output.Contents {
-			// Extract version tag out of "product-service/v1.0.0.json"
 			fileName := strings.TrimPrefix(*object.Key, prefix)
-			versionName := strings.TrimSuffix(fileName, ".json")
-			if versionName != "" {
+			versionName := strings.TrimSuffix(fileName, ".jsonnet")
+			if versionName != "" && !strings.HasSuffix(versionName, "/") {
 				versions = append(versions, versionName)
 			}
 		}
@@ -121,64 +118,220 @@ func main() {
 		json.NewEncoder(w).Encode(versions)
 	}))
 
-	// -------------------------------------------------------------
-	// GET /api/v1/configs/{service}/versions/{version} -> Get Config
-	// -------------------------------------------------------------
-	mux.HandleFunc("GET /api/v1/configs/{service}/versions/{version}", withCORS(func(w http.ResponseWriter, r *http.Request) {
-		service := r.PathValue("service")
-		version := r.PathValue("version")
-
-		key := fmt.Sprintf("%s/%s.json", service, version)
-
-		output, err := s3Client.GetObject(r.Context(), &s3.GetObjectInput{
+	// Helper to fetch string from S3
+	fetchFromS3 := func(ctx context.Context, key string) (string, error) {
+		out, err := s3Client.GetObject(ctx, &s3.GetObjectInput{
 			Bucket: aws.String(getBucketName()),
 			Key:    aws.String(key),
 		})
 		if err != nil {
-			logger.Error(r.Context(), "S3 Get Error", tags.Error(err))
-			http.Error(w, "Failed to get config from S3", http.StatusNotFound)
-			return
+			return "", err
 		}
-		defer output.Body.Close()
-
-		w.Header().Set("Content-Type", "application/json")
-		io.Copy(w, output.Body)
-	}))
+		defer out.Body.Close()
+		b, err := io.ReadAll(out.Body)
+		return string(b), err
+	}
 
 	// -------------------------------------------------------------
-	// PUT /api/v1/configs/{service}/versions/{version} -> Save Config
+	// GET /api/v1/configs/{service}/bundle/{version} -> Get Full State
 	// -------------------------------------------------------------
-	mux.HandleFunc("PUT /api/v1/configs/{service}/versions/{version}", withCORS(func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /api/v1/configs/{service}/bundle/{version}", withCORS(func(w http.ResponseWriter, r *http.Request) {
 		service := r.PathValue("service")
 		version := r.PathValue("version")
 
-		body, err := io.ReadAll(r.Body)
-		if err != nil || !json.Valid(body) {
+		tmpl, _ := fetchFromS3(r.Context(), fmt.Sprintf("%s/templates/%s.jsonnet", service, version))
+		
+		// List all value files
+		valPrefix := fmt.Sprintf("%s/values/", service)
+		valOutput, _ := s3Client.ListObjectsV2(r.Context(), &s3.ListObjectsV2Input{
+			Bucket: aws.String(getBucketName()),
+			Prefix: aws.String(valPrefix),
+		})
+
+		valuesMap := make(map[string]string)
+		if valOutput != nil {
+			for _, object := range valOutput.Contents {
+				envName := strings.TrimSuffix(strings.TrimPrefix(*object.Key, valPrefix), ".json")
+				if envName != "" && !strings.HasSuffix(envName, "/") {
+					valContent, _ := fetchFromS3(r.Context(), *object.Key)
+					valuesMap[envName] = valContent
+				}
+			}
+		}
+
+		// Ensure defaults
+		if tmpl == "" {
+			tmpl = "{\n  \n}"
+		}
+		if _, ok := valuesMap["base"]; !ok {
+			valuesMap["base"] = "{}"
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"template": tmpl,
+			"values":   valuesMap,
+		})
+	}))
+
+	// -------------------------------------------------------------
+	// PUT /api/v1/configs/{service}/bundle/{version} -> Save Full State
+	// -------------------------------------------------------------
+	mux.HandleFunc("PUT /api/v1/configs/{service}/bundle/{version}", withCORS(func(w http.ResponseWriter, r *http.Request) {
+		service := r.PathValue("service")
+		version := r.PathValue("version")
+
+		type BundleRequest struct {
+			Template string            `json:"template"`
+			Values   map[string]string `json:"values"` // base, dev, prod, etc.
+		}
+
+		var bundle BundleRequest
+		if err := json.NewDecoder(r.Body).Decode(&bundle); err != nil {
 			http.Error(w, "invalid JSON payload", http.StatusBadRequest)
 			return
 		}
 
-		key := fmt.Sprintf("%s/%s.json", service, version)
+		// Helper to write to S3
+		writeToS3 := func(key, content, contentType string) error {
+			_, err := s3Client.PutObject(r.Context(), &s3.PutObjectInput{
+				Bucket:      aws.String(getBucketName()),
+				Key:         aws.String(key),
+				Body:        strings.NewReader(content),
+				ContentType: aws.String(contentType),
+			})
+			if err == nil {
+				logger.Info(r.Context(), "Successfully wrote", tags.String("key", key))
+			}
+			return err
+		}
 
-		// Upload payload to S3
-		_, err = s3Client.PutObject(r.Context(), &s3.PutObjectInput{
-			Bucket:      aws.String(getBucketName()),
-			Key:         aws.String(key),
-			Body:        bytes.NewReader(body),
-			ContentType: aws.String("application/json"),
-		})
-		if err != nil {
-			logger.Error(r.Context(), "S3 Put Error", tags.Error(err))
-			http.Error(w, "Failed to upload to S3", http.StatusInternalServerError)
+		// Write template
+		tmplKey := fmt.Sprintf("%s/templates/%s.jsonnet", service, version)
+		if err := writeToS3(tmplKey, bundle.Template, "text/plain"); err != nil {
+			http.Error(w, "Failed to save template", http.StatusInternalServerError)
 			return
 		}
 
-		logger.Info(r.Context(), "Successfully wrote configuration", tags.String("bucket", getBucketName()), tags.String("key", key))
+		// Write values
+		for env, val := range bundle.Values {
+			valKey := fmt.Sprintf("%s/values/%s.json", service, env)
+			if err := writeToS3(valKey, val, "application/json"); err != nil {
+				http.Error(w, "Failed to save values for "+env, http.StatusInternalServerError)
+				return
+			}
+		}
 
-		// Return success response to the UI
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"status":"success"}`))
+	}))
+
+	// -------------------------------------------------------------
+	// POST /api/v1/configs/render -> Render Jsonnet live
+	// -------------------------------------------------------------
+	mux.HandleFunc("POST /api/v1/configs/render", withCORS(func(w http.ResponseWriter, r *http.Request) {
+		type RenderRequest struct {
+			Template   string `json:"template"`
+			BaseValues string `json:"base_values"`
+			EnvValues  string `json:"env_values"`
+		}
+
+		var reqPayload RenderRequest
+		if err := json.NewDecoder(r.Body).Decode(&reqPayload); err != nil {
+			http.Error(w, "invalid request body", http.StatusBadRequest)
+			return
+		}
+
+		// Pre-process: Merge BaseValues and EnvValues using Jsonnet!
+		base := reqPayload.BaseValues
+		if base == "" {
+			base = "{}"
+		}
+		env := reqPayload.EnvValues
+		if env == "" {
+			env = "{}"
+		}
+
+		mergeVM := jsonnet.MakeVM()
+		mergeVM.ExtCode("base", base)
+		mergeVM.ExtCode("env", env)
+		mergedJSON, err := mergeVM.EvaluateAnonymousSnippet("merge.jsonnet", "std.extVar('base') + std.extVar('env')")
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Failed to merge values: " + err.Error()})
+			return
+		}
+
+		// Create the main Jsonnet VM for the template
+		vm := jsonnet.MakeVM()
+		vm.ExtCode("values", mergedJSON)
+
+		// Evaluate the template
+		jsonOutput, err := vm.EvaluateAnonymousSnippet("template.jsonnet", reqPayload.Template)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Template error: " + err.Error()})
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(jsonOutput))
+	}))
+
+	// -------------------------------------------------------------
+	// GET /api/v1/configs/{service}/render/{version}/{env} -> For Microservices
+	// -------------------------------------------------------------
+	mux.HandleFunc("GET /api/v1/configs/{service}/render/{version}/{env}", withCORS(func(w http.ResponseWriter, r *http.Request) {
+		service := r.PathValue("service")
+		version := r.PathValue("version")
+		envName := r.PathValue("env")
+
+		// 1. Fetch Template
+		tmplKey := fmt.Sprintf("%s/templates/%s.jsonnet", service, version)
+		tmpl, err := fetchFromS3(r.Context(), tmplKey)
+		if err != nil {
+			http.Error(w, "Template not found", http.StatusNotFound)
+			return
+		}
+
+		// 2. Fetch Base Values
+		baseKey := fmt.Sprintf("%s/values/base.json", service)
+		base, _ := fetchFromS3(r.Context(), baseKey)
+		if base == "" {
+			base = "{}"
+		}
+
+		// 3. Fetch Env Values
+		envKey := fmt.Sprintf("%s/values/%s.json", service, envName)
+		env, _ := fetchFromS3(r.Context(), envKey)
+		if env == "" {
+			env = "{}"
+		}
+
+		// Merge values
+		mergeVM := jsonnet.MakeVM()
+		mergeVM.ExtCode("base", base)
+		mergeVM.ExtCode("env", env)
+		mergedJSON, err := mergeVM.EvaluateAnonymousSnippet("merge", "std.extVar('base') + std.extVar('env')")
+		if err != nil {
+			http.Error(w, "Failed to merge base and env values", http.StatusInternalServerError)
+			return
+		}
+
+		// Render Template
+		vm := jsonnet.MakeVM()
+		vm.ExtCode("values", mergedJSON)
+		jsonOutput, err := vm.EvaluateAnonymousSnippet("template", tmpl)
+		if err != nil {
+			http.Error(w, "Template evaluation failed", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(jsonOutput))
 	}))
 
 	// Fallback OPTIONS handler for Preflight CORS

@@ -3,13 +3,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const serviceList = document.getElementById('service-list');
     const fileNameDisplay = document.getElementById('current-file-name');
-    const versionSelect = document.getElementById('version-select');
-    const editor = document.getElementById('json-editor');
-    const lineNumbers = document.getElementById('line-numbers');
+    
+    const selectors = document.getElementById('selectors');
+    const envSelect = document.getElementById('env-select');
+    const templateSelect = document.getElementById('template-select');
+    
+    const resultEditor = document.getElementById('result-editor');
+    const valueEditor = document.getElementById('value-editor');
+    const templateEditor = document.getElementById('template-editor');
     
     const btnFormat = document.getElementById('btn-format');
     const btnSaveUpdate = document.getElementById('btn-save-update');
-    const btnSaveNew = document.getElementById('btn-save-new');
     const btnAddService = document.getElementById('btn-add-service');
     
     const saveStatus = document.getElementById('save-status');
@@ -17,8 +21,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const errorText = document.getElementById('error-text');
 
     let currentService = null;
-    let currentVersion = null;
-    let currentOriginalJSONStr = "";
+    let currentTemplateName = null;
+    let currentOriginalTemplateStr = "";
+    
+    // Manage environment states
+    let valuesStore = {};
+    let currentEnv = "base";
 
     async function fetchAPI(endpoint, options = {}) {
         try {
@@ -41,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
         services.forEach(svc => {
             const li = document.createElement('li');
             li.className = 'tree-item';
-            li.innerHTML = `<span class="material-symbols-outlined">data_object</span> ${svc}.json`;
+            li.innerHTML = `<span class="material-symbols-outlined">data_object</span> ${svc}`;
             li.addEventListener('click', () => selectService(svc, li));
             serviceList.appendChild(li);
         });
@@ -52,26 +60,46 @@ document.addEventListener('DOMContentLoaded', () => {
         if (element) element.classList.add('active');
 
         currentService = serviceName;
-        fileNameDisplay.textContent = `Configs / ${serviceName}.json`;
+        fileNameDisplay.textContent = `Configs / ${serviceName}`;
+        selectors.style.display = 'flex';
         
         // Fetch versions from API
         const versions = await fetchAPI(`${API_BASE}/${serviceName}/versions`);
         
-        versionSelect.innerHTML = '';
-        versions.forEach(vInfo => {
-            const versionVal = typeof vInfo === 'string' ? vInfo : vInfo.version;
-            const opt = document.createElement('option');
-            opt.value = versionVal;
-            opt.textContent = versionVal;
-            versionSelect.appendChild(opt);
-        });
+        templateSelect.innerHTML = '';
+        if (versions && Array.isArray(versions)) {
+            versions.forEach(vInfo => {
+                const versionVal = typeof vInfo === 'string' ? vInfo : vInfo.version;
+                const opt = document.createElement('option');
+                opt.value = versionVal;
+                opt.textContent = `${versionVal}.jsonnet`;
+                templateSelect.appendChild(opt);
+            });
+        }
         
-        versionSelect.style.display = 'block';
-        
-        // Load the first available version (hopefully latest) if array has items
-        if (versions.length > 0) {
+        if (versions && versions.length > 0) {
             const firstVal = typeof versions[0] === 'string' ? versions[0] : versions[0].version;
-            loadVersionData(firstVal);
+            loadTemplateAndValues(firstVal);
+        } else {
+            const defaultVersion = "v1.0.0";
+            const opt = document.createElement('option');
+            opt.value = defaultVersion;
+            opt.textContent = `${defaultVersion}.jsonnet`;
+            templateSelect.appendChild(opt);
+            templateSelect.value = defaultVersion;
+            currentTemplateName = defaultVersion;
+
+            templateEditor.value = "{\n  \n}";
+            valuesStore = {
+                base: "{\n  \n}",
+                dev: "{\n  \n}",
+                staging: "{\n  \n}",
+                prod: "{\n  \n}"
+            };
+            envSelect.value = "base";
+            currentEnv = "base";
+            valueEditor.value = valuesStore["base"];
+            btnSaveUpdate.disabled = false;
         }
     }
 
@@ -81,81 +109,110 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!newSvc) return;
         
         currentService = newSvc.trim();
-        currentVersion = "v1.0.0 (Latest)";
+        const v = "v1.0.0";
         
-        fileNameDisplay.textContent = `Configs / ${currentService}.json`;
+        fileNameDisplay.textContent = `Configs / ${currentService}`;
+        selectors.style.display = 'flex';
         
-        versionSelect.innerHTML = `<option value="${currentVersion}">${currentVersion}</option>`;
-        versionSelect.value = currentVersion;
-        versionSelect.style.display = 'block';
+        templateSelect.innerHTML = `<option value="${v}">${v}.jsonnet</option>`;
+        templateSelect.value = v;
+        currentTemplateName = v;
         
         // Clear active tree item
         document.querySelectorAll('.tree-item').forEach(el => el.classList.remove('active'));
         
-        currentOriginalJSONStr = "{\n  \n}";
-        editor.value = currentOriginalJSONStr;
+        templateEditor.value = "{\n  \n}";
+        valuesStore = {
+            base: "{\n  \n}",
+            dev: "{\n  \n}",
+            staging: "{\n  \n}",
+            prod: "{\n  \n}"
+        };
+        envSelect.value = "base";
+        currentEnv = "base";
+        valueEditor.value = valuesStore["base"];
         
         btnSaveUpdate.disabled = false;
-        btnSaveNew.disabled = false;
-        
-        updateLineNumbers();
         saveStatus.className = 'status-badge visible unsaved';
         saveStatus.textContent = 'Draft (Unsaved)';
+        
+        debouncedUpdateResult();
     });
 
-    async function loadVersionData(versionName) {
-        currentVersion = versionName;
-        versionSelect.value = versionName;
+    async function loadTemplateAndValues(templateName) {
+        currentTemplateName = templateName;
+        templateSelect.value = templateName;
         
-        const data = await fetchAPI(`${API_BASE}/${currentService}/versions/${encodeURIComponent(versionName)}`);
+        try {
+            const data = await fetchAPI(`${API_BASE}/${currentService}/bundle/${encodeURIComponent(templateName)}`);
+            templateEditor.value = data.template;
+            
+            // Populate values store
+            valuesStore = {
+                base: data.values["base"] || "{\n  \n}",
+                dev: data.values["dev"] || "{\n  \n}",
+                staging: data.values["staging"] || "{\n  \n}",
+                prod: data.values["prod"] || "{\n  \n}"
+            };
+        } catch(e) {
+            templateEditor.value = "{\n  \n}";
+            valuesStore = {
+                base: "{\n  \n}",
+                dev: "{\n  \n}",
+                staging: "{\n  \n}",
+                prod: "{\n  \n}"
+            };
+        }
         
-        // Data might be string returned or JSON object, format it securely
-        const pureObj = typeof data === 'string' ? JSON.parse(data) : data;
-        currentOriginalJSONStr = JSON.stringify(pureObj, null, 2);
+        currentEnv = "base";
+        envSelect.value = currentEnv;
+        valueEditor.value = valuesStore[currentEnv];
         
-        editor.value = currentOriginalJSONStr;
+        currentOriginalTemplateStr = templateEditor.value;
         
         btnSaveUpdate.disabled = false;
-        btnSaveNew.disabled = false;
-        
         hideError();
-        updateLineNumbers();
         checkUnsavedChanges();
+        debouncedUpdateResult();
     }
 
-    versionSelect.addEventListener('change', (e) => {
+    templateSelect.addEventListener('change', (e) => {
         if (!currentService) return;
-        const newVersion = e.target.value;
-        if (editor.value !== currentOriginalJSONStr) {
-            if(!confirm("You have unsaved changes. Discard and switch version?")) {
-                e.target.value = currentVersion; // revert
+        if (templateEditor.value !== currentOriginalTemplateStr) {
+            if(!confirm("You have unsaved template changes. Discard?")) {
+                e.target.value = currentTemplateName; // revert
                 return;
             }
         }
-        loadVersionData(newVersion);
+        loadTemplateAndValues(e.target.value);
+    });
+    
+    envSelect.addEventListener('change', (e) => {
+        if (!currentService) return;
+        // Save current editor to old env
+        valuesStore[currentEnv] = valueEditor.value;
+        // Load new env
+        currentEnv = e.target.value;
+        valueEditor.value = valuesStore[currentEnv] || "{\n  \n}";
+        debouncedUpdateResult();
     });
 
-    // --- Line Number logic ---
-    function updateLineNumbers() {
-        const lines = editor.value.split('\n').length;
-        let numbersHtml = '';
-        for (let i = 1; i <= lines; i++) {
-            numbersHtml += i + '<br>';
-        }
-        lineNumbers.innerHTML = numbersHtml;
-    }
-
-    editor.addEventListener('scroll', () => lineNumbers.scrollTop = editor.scrollTop);
-
-    editor.addEventListener('input', () => {
-        updateLineNumbers();
+    // --- Editor Events ---
+    templateEditor.addEventListener('input', () => {
         checkUnsavedChanges();
-        validateJsonBackground();
+        debouncedUpdateResult();
+    });
+    
+    valueEditor.addEventListener('input', () => {
+        valuesStore[currentEnv] = valueEditor.value;
+        checkUnsavedChanges();
+        debouncedUpdateResult();
     });
 
     function checkUnsavedChanges() {
         if (!currentService) return;
-        if (editor.value !== currentOriginalJSONStr) {
+        // simplified check
+        if (templateEditor.value !== currentOriginalTemplateStr) {
             saveStatus.textContent = 'Unsaved changes';
             saveStatus.className = 'status-badge visible unsaved';
         } else {
@@ -169,87 +226,111 @@ document.addEventListener('DOMContentLoaded', () => {
         errorBar.classList.add('visible');
     }
 
-    function validateJsonBackground() {
+    let debounceTimer;
+    function debouncedUpdateResult() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(updateResult, 500);
+    }
+
+    async function updateResult() {
+        const tmpl = templateEditor.value;
+        const baseVals = valuesStore["base"] || "{}";
+        const envVals = (currentEnv === "base") ? "{}" : (valuesStore[currentEnv] || "{}");
+        
+        if (tmpl.trim() === '') {
+            resultEditor.value = "";
+            hideError();
+            return;
+        }
+
         try {
-            if (editor.value.trim() === '') return hideError();
-            JSON.parse(editor.value);
+            const res = await fetch(`${API_BASE}/render`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    template: tmpl, 
+                    base_values: baseVals,
+                    env_values: envVals
+                })
+            });
+            
+            const data = await res.json();
+            
+            if (!res.ok) {
+                // If it's a jsonnet evaluation error, we show it in the result box or error bar
+                resultEditor.value = `// Rendering Error:\n${data.error || 'Unknown error'}`;
+                showError("Jsonnet Evaluation Error");
+                return;
+            }
+
+            resultEditor.value = JSON.stringify(data, null, 2);
             hideError();
         } catch (e) {
-            showError("Invalid JSON syntax");
+            resultEditor.value = `// Network or server error:\n${e.message}`;
+            showError("Failed to reach rendering server");
         }
     }
 
     btnFormat.addEventListener('click', () => {
         try {
-            const parsed = JSON.parse(editor.value);
-            editor.value = JSON.stringify(parsed, null, 2);
-            updateLineNumbers();
+            if (valueEditor.value.trim() !== "") {
+                const parsedVal = JSON.parse(valueEditor.value);
+                valueEditor.value = JSON.stringify(parsedVal, null, 2);
+            }
+            // we won't format Jsonnet for now since standard JSON.parse breaks on it
             hideError();
-            checkUnsavedChanges();
         } catch (e) {
             showError("Cannot format: Invalid JSON");
         }
     });
 
-    // --- Saving logic (Sends to API) ---
-    btnSaveUpdate.addEventListener('click', () => {
-        saveData(currentVersion, "Updating version...");
-    });
-
-    btnSaveNew.addEventListener('click', () => {
-        if (!currentService) return;
-        let newVersionName = prompt("Enter new version label (e.g. v2.1.0):");
-        if (!newVersionName) return; 
-        
-        newVersionName = newVersionName + " (Latest)";
-        saveData(newVersionName, `Creating ${newVersionName}...`, true);
-    });
-
-    async function saveData(versionKey, messageText, isNew = false) {
+    btnSaveUpdate.addEventListener('click', async () => {
         if (!currentService) return;
         try {
-            const parsed = JSON.parse(editor.value);
             saveStatus.className = 'status-badge visible';
-            saveStatus.textContent = messageText;
+            saveStatus.textContent = "Updating files...";
 
-            // Make PUT request
-            await fetchAPI(`${API_BASE}/${currentService}/versions/${encodeURIComponent(versionKey)}`, {
+            // Ensure current editor values are flushed to store
+            valuesStore[currentEnv] = valueEditor.value;
+
+            // Make PUT request to bundle endpoint
+            const payload = {
+                template: templateEditor.value,
+                values: valuesStore
+            };
+
+            const res = await fetch(`${API_BASE}/${currentService}/bundle/${currentTemplateName}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(parsed)
+                body: JSON.stringify(payload)
             });
 
-            currentOriginalJSONStr = JSON.stringify(parsed, null, 2);
-            editor.value = currentOriginalJSONStr;
-            updateLineNumbers();
+            if (!res.ok) throw new Error("Failed to save");
 
-            saveStatus.textContent = "Saved to Database!";
+            currentOriginalTemplateStr = templateEditor.value;
+
+            saveStatus.textContent = "Saved!";
             saveStatus.classList.remove('unsaved');
             setTimeout(() => saveStatus.className = 'status-badge', 3000);
             hideError();
-            
-            if (isNew) {
-                // Refresh backend layout
-                const currentActive = document.querySelector('.tree-item.active');
-                selectService(currentService, currentActive);
-                currentVersion = versionKey;
-            }
         } catch (e) {
-            showError(e.message || "Failed to save: Invalid JSON");
+            showError("Failed to save to S3.");
         }
-    }
+    });
 
-    editor.addEventListener('keydown', function(e) {
+    function handleTab(e) {
         if (e.key === 'Tab') {
             e.preventDefault();
             const start = this.selectionStart;
             const end = this.selectionEnd;
             this.value = this.value.substring(0, start) + "  " + this.value.substring(end);
             this.selectionStart = this.selectionEnd = start + 2;
-            updateLineNumbers();
         }
-    });
+    }
 
-    // Boot UI by requesting the backend listing
+    templateEditor.addEventListener('keydown', handleTab);
+    valueEditor.addEventListener('keydown', handleTab);
+
+    // Boot UI
     loadSidebar();
 });

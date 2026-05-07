@@ -31,7 +31,7 @@ type Configuration struct {
 	Kafka             KafkaHost `json:"kafka"`
 	HealthCheckWorker Worker    `json:"worker"`
 }
-
+// loadConfiguration 
 func loadConfiguration(fileName string) Configuration {
 	data, err := os.ReadFile(fileName)
 	if err != nil {

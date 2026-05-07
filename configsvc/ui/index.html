@@ -31,35 +31,62 @@
                 <div class="file-info">
                     <span class="material-symbols-outlined">description</span>
                     <h3 id="current-file-name">Select a service</h3>
-                    <select id="version-select" class="version-select" style="display: none;">
-                        <!-- JS populated -->
-                    </select>
+                    
+                    <div id="selectors" style="display: none; display: flex; gap: 12px; margin-left: 12px; align-items: center;">
+                        <span class="material-symbols-outlined" style="color: var(--text-secondary); font-size: 18px;">code_blocks</span>
+                        <select id="template-select" class="version-select">
+                            <!-- JS populated -->
+                        </select>
+                    </div>
                     <span class="status-badge" id="save-status">Unsaved</span>
                 </div>
+                
                 <div class="editor-actions">
-                    <button class="btn btn-secondary" id="btn-format" title="Format JSON">
+                    <button class="btn btn-secondary" id="btn-format" title="Format Code">
                         <span class="material-symbols-outlined">data_object</span> Format
                     </button>
-                    <button class="btn btn-secondary" id="btn-save-update" disabled title="Overwrite this version">
-                        <span class="material-symbols-outlined">save</span> Update
-                    </button>
-                    <button class="btn btn-primary" id="btn-save-new" disabled title="Save as a new version">
-                        <span class="material-symbols-outlined">library_add</span> New Version
+                    <button class="btn btn-primary" id="btn-save-update" disabled title="Save Changes">
+                        <span class="material-symbols-outlined">save</span> Save Changes
                     </button>
                 </div>
             </header>
             
-            <div class="editor-container">
-                <!-- Line numbers -->
-                <div class="line-numbers" id="line-numbers">1</div>
-                <!-- Textarea for JSON -->
-                <textarea id="json-editor" spellcheck="false" placeholder="// Select a service from the sidebar to view and edit its JSON configuration...&#10;// E.g.&#10;{&#10;  &quot;database&quot;: {&#10;    &quot;host&quot;: &quot;db.internal&quot;&#10;  }&#10;}"></textarea>
+            <div class="three-col-layout">
+                <div class="col-panel">
+                    <div class="col-header">
+                        <span class="material-symbols-outlined">code_blocks</span>
+                        Template (Jsonnet)
+                    </div>
+                    <textarea id="template-editor" spellcheck="false" placeholder="// Enter Jsonnet template here..."></textarea>
+                </div>
+                
+                <div class="col-panel">
+                    <div class="col-header">
+                        <span class="material-symbols-outlined">data_object</span>
+                        <select id="env-select" class="version-select" style="background: transparent; border: none; font-weight: 600; text-transform: uppercase; padding: 0;">
+                            <option value="base">Base Values</option>
+                            <option value="dev">dev.json</option>
+                            <option value="staging">staging.json</option>
+                            <option value="prod">prod.json</option>
+                        </select>
+                    </div>
+                    <textarea id="value-editor" spellcheck="false" placeholder="// Enter JSON values here..."></textarea>
+                </div>
+
+                <div class="col-panel result-panel">
+                    <div class="col-header">
+                        <span class="material-symbols-outlined">preview</span>
+                        Rendered Result
+                        <div class="header-badge">Read-only</div>
+                    </div>
+                    <textarea id="result-editor" readonly spellcheck="false" placeholder="// The merged output will appear here..."></textarea>
+                </div>
             </div>
             
             <!-- Optional error bar -->
             <div class="error-bar" id="error-bar">
                 <span class="material-symbols-outlined">error</span>
-                <span id="error-text">Invalid JSON format</span>
+                <span id="error-text">Invalid format</span>
             </div>
         </main>
     </div>

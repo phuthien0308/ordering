@@ -30,7 +30,7 @@ import (
 
 var (
 	errMissingMetadata = status.Errorf(codes.InvalidArgument, "missing metadata")
-	logger             *simplelog.SimpleZapLogger
+	logger             *simplelog.SimpleLogger
 )
 
 func main() {
@@ -51,7 +51,7 @@ func main() {
 
 	defer zapLogger.Sync()
 
-	logger = &simplelog.SimpleZapLogger{
+	logger = &simplelog.SimpleLogger{
 		Logger: zapLogger,
 	}
 
@@ -121,7 +121,7 @@ func initRedisClient() *redis.Client {
 	return client
 }
 
-func requestInterceptor(logger *simplelog.SimpleZapLogger) grpc.UnaryServerInterceptor {
+func requestInterceptor(logger *simplelog.SimpleLogger) grpc.UnaryServerInterceptor {
 
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		start := time.Now()
